@@ -1,0 +1,13 @@
+# Data files (too large for git)
+*.csv
+*.json
+!docs/data/*.json
+!docs/**
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE / system
+.claude/
+nul
