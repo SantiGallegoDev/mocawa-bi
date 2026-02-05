@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mocawa Cafe - Analisis BI &amp; Recomendaciones</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0e1117;
+            --surface: #1a1a2e;
+            --surface2: #16213e;
+            --accent: #ff5023;
+            --accent2: #2ec4b6;
+            --green: #4caf50;
+            --yellow: #ffc107;
+            --red: #ee6c4d;
+            --text: #fafafa;
+            --text-muted: #a0a0b0;
+            --border: #2a2a3e;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            line-height: 1.7;
+            padding: 0 20px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        a { color: var(--accent2); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 10px;
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 2rem; font-weight: 700; }
+        .header .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 6px; }
+        .back-link { display: inline-block; margin-top: 10px; font-size: 0.9rem; }
+
+        /* TOC */
+        .toc {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px 28px;
+            margin-bottom: 36px;
+            border-left: 4px solid var(--accent);
+        }
+        .toc h2 { font-size: 1.1rem; margin-bottom: 10px; color: var(--accent); }
+        .toc ol { padding-left: 20px; }
+        .toc li { margin: 5px 0; }
+        .toc a { color: var(--accent2); font-size: 0.95rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            font-size: 1.5rem;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+        .section h3 {
+            font-size: 1.15rem;
+            color: var(--accent2);
+            margin: 20px 0 10px;
+        }
+        .section p, .section li {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .section ul, .section ol {
+            padding-left: 22px;
+            margin: 8px 0;
+        }
+        .section li { margin: 4px 0; }
+        .section strong { color: var(--text); }
+
+        /* Highlight cards */
+        .highlight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+        .highlight-card {
+            background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+            border-radius: 12px;
+            padding: 18px 22px;
+            border-left: 4px solid var(--accent);
+        }
+        .highlight-card.green { border-left-color: var(--green); }
+        .highlight-card.yellow { border-left-color: var(--yellow); }
+        .highlight-card.red { border-left-color: var(--red); }
+        .highlight-card .card-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .highlight-card .card-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+        .highlight-card .card-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Recommendation cards */
+        .rec-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 14px 0;
+            border-left: 5px solid var(--accent);
+            position: relative;
+        }
+        .rec-card.high { border-left-color: var(--red); }
+        .rec-card.medium { border-left-color: var(--yellow); }
+        .rec-card.low { border-left-color: var(--green); }
+        .rec-card .rec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .rec-card .rec-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .rec-card .rec-badge {
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .rec-card.high .rec-badge { background: var(--red); color: #fff; }
+        .rec-card.medium .rec-badge { background: var(--yellow); color: #1a1a2e; }
+        .rec-card.low .rec-badge { background: var(--green); color: #fff; }
+        .rec-card p, .rec-card li { color: var(--text-muted); font-size: 0.9rem; }
+        .rec-card ul { padding-left: 18px; margin: 8px 0; }
+        .rec-card .impact {
+            margin-top: 10px;
+            padding: 8px 14px;
+            background: rgba(255, 80, 35, 0.08);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+
+        /* Data tables */
+        .data-table-wrap {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin: 14px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th {
+            background: var(--surface2);
+            color: var(--accent);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent);
+            white-space: nowrap;
+        }
+        td {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        tr:nth-child(even) { background: rgba(26,26,46,0.5); }
+        .bad { color: var(--red); font-weight: 600; }
+        .good { color: var(--green); font-weight: 600; }
+        .warn { color: var(--yellow); font-weight: 600; }
+
+        /* Bar visual */
+        .bar-bg {
+            background: var(--border);
+            border-radius: 4px;
+            height: 8px;
+            width: 100%;
+            min-width: 80px;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: var(--accent);
+        }
+
+        /* Insight box */
+        .insight-box {
+            background: rgba(46, 196, 182, 0.08);
+            border: 1px solid rgba(46, 196, 182, 0.3);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 14px 0;
+        }
+        .insight-box .insight-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent2);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .insight-box p { font-size: 0.9rem; color: var(--text-muted); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .highlight-grid { grid-template-columns: 1fr; }
+            body { padding: 0 12px 40px; }
+            .header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <h1>Mocawa Cafe - Analisis Estrategico BI</h1>
+    <p class="subtitle">Periodo: Agosto 2022 — Febrero 2026 | 195,962 ventas | $1,939M COP en ingresos</p>
+    <a href="index.html" class="back-link">&larr; Volver al Dashboard</a>
+</header>
+
+<!-- Table of Contents -->
+<nav class="toc">
+    <h2>Contenido</h2>
+    <ol>
+        <li><a href="#executive">Resumen Ejecutivo</a></li>
+        <li><a href="#kpis">Diagnostico: KPIs Clave</a></li>
+        <li><a href="#growth">Analisis de Crecimiento y Estacionalidad</a></li>
+        <li><a href="#products">Analisis de Productos y Categorias</a></li>
+        <li><a href="#margins">Analisis de Rentabilidad y Margenes</a></li>
+        <li><a href="#payments">Metodos de Pago y Tendencias</a></li>
+        <li><a href="#staff">Rendimiento del Equipo</a></li>
+        <li><a href="#time">Patrones de Horario y Oportunidades</a></li>
+        <li><a href="#recommendations">Plan de Accion: 12 Recomendaciones</a></li>
+        <li><a href="#roadmap">Hoja de Ruta (Roadmap)</a></li>
+    </ol>
+</nav>
+
+<!-- 1. EXECUTIVE SUMMARY -->
+<section class="section" id="executive">
+    <h2>1. Resumen Ejecutivo</h2>
+
+    <div class="highlight-grid">
+        <div class="highlight-card green">
+            <div class="card-title">Ingresos Totales</div>
+            <div class="card-value">$1,939M</div>
+            <div class="card-desc">195,962 transacciones en 3.5 anos</div>
+        </div>
+        <div class="highlight-card green">
+            <div class="card-title">Margen Bruto</div>
+            <div class="card-value">76.1%</div>
+            <div class="card-desc">Excelente para el sector cafe/panaderia</div>
+        </div>
+        <div class="highlight-card green">
+            <div class="card-title">Crecimiento 2024-2025</div>
+            <div class="card-value">+40%</div>
+            <div class="card-desc">Promedio YoY en meses comparables</div>
+        </div>
+        <div class="highlight-card yellow">
+            <div class="card-title">Ticket Promedio</div>
+            <div class="card-value">$9,897</div>
+            <div class="card-desc">Oportunidad de incremento via upselling</div>
+        </div>
+    </div>
+
+    <p>Mocawa Cafe muestra un negocio <strong>saludable y en crecimiento acelerado</strong>, con margenes brutos de 76.1% — superiores al promedio de la industria QSR (55-65%). El 2025 marco un punto de inflexion con crecimiento sostenido del 30-85% interanual en la mayoria de meses.</p>
+
+    <p>Sin embargo, existen <strong>oportunidades claras de optimizacion</strong>: la categoria de sandwiches opera con margenes peligrosamente bajos (48-51%), la dependencia del efectivo genera ineficiencias operativas, y la concentracion de ventas en un solo miembro del staff representa un riesgo para el negocio.</p>
+
+    <div class="insight-box">
+        <div class="insight-label">Hallazgo Principal</div>
+        <p>Las bebidas calientes representan el 66% del ingreso con un margen del 83%. Este es el motor del negocio. Toda estrategia de crecimiento deberia reforzar y expandir esta fortaleza, mientras se corrigen los puntos debiles en panaderia premium (sandwiches) y se diversifican canales de pago.</p>
+    </div>
+</section>
+
+<!-- 2. KPI DIAGNOSTICO -->
+<section class="section" id="kpis">
+    <h2>2. Diagnostico: KPIs Clave</h2>
+
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Metrica</th><th>Valor</th><th>Evaluacion</th><th>Benchmark Industria</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Margen Bruto</td><td class="num">76.1%</td><td class="good">Excelente</td><td>55-65% (QSR Colombia)</td></tr>
+                <tr><td>Ticket Promedio</td><td class="num">$9,897</td><td class="warn">Mejorable</td><td>$12,000-15,000 (cafes premium)</td></tr>
+                <tr><td>Items por Ticket</td><td class="num">2.1</td><td class="warn">Bajo</td><td>2.5-3.0 (objetivo)</td></tr>
+                <tr><td>Ingreso Diario Prom.</td><td class="num">$1,511,605</td><td class="good">Solido</td><td>Creciendo 40% YoY</td></tr>
+                <tr><td>Tasa de Cancelacion</td><td class="num">0.05%</td><td class="good">Excelente</td><td>&lt;2% es bueno</td></tr>
+                <tr><td>Duracion Promedio</td><td class="num">2 min</td><td class="good">Rapido</td><td>Modelo takeaway eficiente</td></tr>
+                <tr><td>Propinas Totales</td><td class="num">$20,000</td><td class="bad">Muy Bajo</td><td>Falta cultura de propina o sistema</td></tr>
+                <tr><td>Descuentos</td><td class="num">$161,175</td><td class="good">Controlado</td><td>0.008% de ingresos — minimo</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="insight-box">
+        <div class="insight-label">Diagnostico</div>
+        <p>Los KPIs muestran un negocio operativamente eficiente con excelentes margenes. Las areas de mejora son: (1) Incrementar el ticket promedio de $9,897 a $12,000+ mediante combos y upselling, y (2) Subir items/ticket de 2.1 a 2.5+ sugiriendo complementos.</p>
+    </div>
+</section>
+
+<!-- 3. GROWTH ANALYSIS -->
+<section class="section" id="growth">
+    <h2>3. Analisis de Crecimiento y Estacionalidad</h2>
+
+    <h3>3.1 Trayectoria de Crecimiento</h3>
+    <p>El negocio muestra una <strong>clara curva de crecimiento acelerado</strong> a partir de febrero 2025:</p>
+
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Periodo</th><th>Ingreso Mensual Prom.</th><th>Crecimiento vs Anterior</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Ago-Dic 2022</td><td class="num">$33,300,000</td><td>— (baseline)</td></tr>
+                <tr><td>2023 Completo</td><td class="num">$36,668,000</td><td class="good">+10.1%</td></tr>
+                <tr><td>2024 Completo</td><td class="num">$42,122,000</td><td class="good">+14.9%</td></tr>
+                <tr><td>Ene-Dic 2025</td><td class="num">$62,831,000</td><td class="good">+49.2%</td></tr>
+                <tr><td>Ene 2026</td><td class="num">$65,772,000</td><td class="good">Tendencia sostenida</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>3.2 Estacionalidad Identificada</h3>
+    <ul>
+        <li><strong>Meses fuertes:</strong> Julio, Septiembre, Octubre — consistentemente los de mayor facturacion. Coincide con temporada escolar y menor periodo vacacional.</li>
+        <li><strong>Meses debiles:</strong> Enero historicamente bajo (post-festividades), Junio variable (mitad de ano). Diciembre 2024 fue anomalamente bajo ($26.8M) pero Diciembre 2025 se recupero fuerte ($61.4M).</li>
+        <li><strong>Patron semanal:</strong> Martes a Viernes concentran el 76% del ingreso. Sabado aporta 9.3%. <strong>Domingo cerrado</strong> (solo 1 venta registrada). Lunes es el dia mas debil entre semana (14.9%).</li>
+    </ul>
+
+    <h3>3.3 Comparacion Interanual (Meses Destacados)</h3>
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Mes</th><th>2023</th><th>2024</th><th>2025</th><th>Crec. 24→25</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Febrero</td><td class="num">$34.6M</td><td class="num">$41.4M</td><td class="num">$61.7M</td><td class="good">+49.0%</td></tr>
+                <tr><td>Marzo</td><td class="num">$41.1M</td><td class="num">$36.2M</td><td class="num">$64.2M</td><td class="good">+77.5%</td></tr>
+                <tr><td>Junio</td><td class="num">$33.7M</td><td class="num">$30.7M</td><td class="num">$57.0M</td><td class="good">+85.8%</td></tr>
+                <tr><td>Julio</td><td class="num">$35.0M</td><td class="num">$50.6M</td><td class="num">$70.9M</td><td class="good">+40.1%</td></tr>
+                <tr><td>Octubre</td><td class="num">$39.9M</td><td class="num">$53.2M</td><td class="num">$71.0M</td><td class="good">+33.7%</td></tr>
+                <tr><td>Diciembre</td><td class="num">$35.8M</td><td class="num">$26.8M</td><td class="num">$61.4M</td><td class="good">+128.6%</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="insight-box">
+        <div class="insight-label">Conclusion</div>
+        <p>El 2025 represento un cambio de escala fundamental. El negocio paso de ~$37M/mes promedio en 2023 a ~$63M/mes en 2025 — un crecimiento del 70%. Esto sugiere una combinacion de: mayor trafico, posibles ajustes de precios, y mejor posicionamiento. La tendencia se mantiene en 2026.</p>
+    </div>
+</section>
+
+<!-- 4. PRODUCTS ANALYSIS -->
+<section class="section" id="products">
+    <h2>4. Analisis de Productos y Categorias</h2>
+
+    <h3>4.1 Composicion del Portafolio</h3>
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Categoria</th><th>Ingresos</th><th>% del Total</th><th>Margen %</th><th>Evaluacion</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Bebidas Calientes</td><td class="num">$1,284M</td><td class="num">45.8%</td><td class="good">83.0%</td><td class="good">Motor del negocio</td></tr>
+                <tr><td>Panaderia</td><td class="num">$1,229M</td><td class="num">43.8%</td><td class="warn">70.8%</td><td class="warn">Revisar sandwiches</td></tr>
+                <tr><td>Bebidas Frias</td><td class="num">$275M</td><td class="num">9.8%</td><td class="warn">67.1%</td><td>Oportunidad de crecimiento</td></tr>
+                <tr><td>Snacks</td><td class="num">$10.9M</td><td class="num">0.4%</td><td>71.2%</td><td>Marginal</td></tr>
+                <tr><td>Adiciones</td><td class="num">$3.3M</td><td class="num">0.1%</td><td class="good">90.6%</td><td class="good">Alta rentabilidad</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>4.2 Top 10 Productos — Estrellas del Menu</h3>
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>#</th><th>Producto</th><th>Ingresos</th><th>Unidades</th><th>Margen</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Latte 7oz</td><td class="num">$254.6M</td><td class="num">30,358</td><td class="good">85.7%</td></tr>
+                <tr><td>2</td><td>Americano 4oz</td><td class="num">$195.5M</td><td class="num">45,706</td><td class="good">83.4%</td></tr>
+                <tr><td>3</td><td>Americano 7oz</td><td class="num">$190.9M</td><td class="num">28,997</td><td class="good">85.8%</td></tr>
+                <tr><td>4</td><td>Capuccino 7oz</td><td class="num">$155.0M</td><td class="num">18,827</td><td class="good">85.4%</td></tr>
+                <tr><td>5</td><td>Milo Caliente 9oz</td><td class="num">$116.0M</td><td class="num">14,238</td><td class="good">74.8%</td></tr>
+                <tr><td>6</td><td>Palito de Queso</td><td class="num">$113.1M</td><td class="num">15,357</td><td>70.8%</td></tr>
+                <tr><td>7</td><td>Croissant Queso</td><td class="num">$110.7M</td><td class="num">14,960</td><td class="good">79.2%</td></tr>
+                <tr><td>8</td><td>Pastel de Pollo</td><td class="num">$101.2M</td><td class="num">8,338</td><td>68.7%</td></tr>
+                <tr><td>9</td><td>Croissant Almendras</td><td class="num">$96.1M</td><td class="num">11,466</td><td class="good">75.1%</td></tr>
+                <tr><td>10</td><td>Sandwich Croissant</td><td class="num">$93.4M</td><td class="num">10,643</td><td class="good">76.5%</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>4.3 Productos Problematicos — Margen Bajo con Alto Volumen</h3>
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Producto</th><th>Ingresos</th><th>Unidades</th><th>Margen</th><th>Ganancia Perdida*</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Sandwich Baguette</td><td class="num">$49.3M</td><td class="num">5,267</td><td class="bad">48.7%</td><td class="bad">$10.3M si fuera 70%</td></tr>
+                <tr><td>Sandwich Tradicional</td><td class="num">$47.2M</td><td class="num">5,162</td><td class="bad">50.8%</td><td class="bad">$9.1M si fuera 70%</td></tr>
+                <tr><td>Pastel de Carne</td><td class="num">$33.3M</td><td class="num">4,375</td><td class="warn">51.9%</td><td class="warn">$6.0M si fuera 70%</td></tr>
+                <tr><td>Croissant Jamon y Queso</td><td class="num">$92.1M</td><td class="num">12,172</td><td class="warn">66.6%</td><td class="warn">$3.1M si fuera 70%</td></tr>
+                <tr><td>Macciato</td><td class="num">$1.8M</td><td class="num">137</td><td class="bad">33.4%</td><td>Bajo volumen</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p><em>*Ganancia adicional estimada si el margen subiera al 70% (objetivo minimo para panaderia)</em></p>
+
+    <div class="insight-box">
+        <div class="insight-label">Alerta Critica</div>
+        <p>Los sandwiches (Baguette + Tradicional) generan $96.5M en ingresos pero operan con margenes del 48-51% — <strong>casi 30 puntos porcentuales por debajo</strong> de las bebidas calientes. Si se ajustara el margen al 70%, se ganarian ~$19.4M adicionales en el mismo periodo. Esto requiere revision urgente de costos de ingredientes o ajuste de precios.</p>
+    </div>
+</section>
+
+<!-- 5. PROFITABILITY -->
+<section class="section" id="margins">
+    <h2>5. Analisis de Rentabilidad y Margenes</h2>
+
+    <h3>5.1 Evolucion del Margen Bruto</h3>
+    <p>El margen ha mostrado una <strong>mejora consistente</strong> a lo largo del periodo:</p>
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Periodo</th><th>Margen Promedio</th><th>Tendencia</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>2022 (Ago-Dic)</td><td class="num">68.1%</td><td>Baseline</td></tr>
+                <tr><td>2023</td><td class="num">71.9%</td><td class="good">+3.8 pts</td></tr>
+                <tr><td>2024</td><td class="num">75.3%</td><td class="good">+3.4 pts</td></tr>
+                <tr><td>2025</td><td class="num">79.8%</td><td class="good">+4.5 pts</td></tr>
+                <tr><td>2026 (Ene-Feb)</td><td class="num">81.6%</td><td class="good">+1.8 pts</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>El margen ha subido <strong>13.5 puntos porcentuales</strong> en 3.5 anos. Esto refleja una combinacion de: mejor negociacion con proveedores, optimizacion del menu, y posiblemente ajustes de precios superiores a la inflacion de costos.</p>
+
+    <h3>5.2 Mapa de Rentabilidad por Categoria</h3>
+    <div class="highlight-grid">
+        <div class="highlight-card green">
+            <div class="card-title">Adiciones</div>
+            <div class="card-value">90.6%</div>
+            <div class="card-desc">$2.9M en ganancia — promover mas</div>
+        </div>
+        <div class="highlight-card green">
+            <div class="card-title">Bebidas Calientes</div>
+            <div class="card-value">83.0%</div>
+            <div class="card-desc">$1,065M en ganancia — core business</div>
+        </div>
+        <div class="highlight-card yellow">
+            <div class="card-title">Panaderia</div>
+            <div class="card-value">70.8%</div>
+            <div class="card-desc">$870M en ganancia — mejorable</div>
+        </div>
+        <div class="highlight-card yellow">
+            <div class="card-title">Bebidas Frias</div>
+            <div class="card-value">67.1%</div>
+            <div class="card-desc">$184M en ganancia — revisar terceros</div>
+        </div>
+    </div>
+
+    <div class="insight-box">
+        <div class="insight-label">Oportunidad de $28.5M</div>
+        <p>Si Panaderia subiera su margen promedio de 70.8% a 75% (aun por debajo de bebidas calientes), la ganancia adicional seria de ~$51.6M en el periodo. Solo ajustar los 5 productos con margen &lt;55% (sandwiches, pastel de carne, macciato) podria generar $28.5M adicionales en margen.</p>
+    </div>
+</section>
+
+<!-- 6. PAYMENTS -->
+<section class="section" id="payments">
+    <h2>6. Metodos de Pago y Tendencias</h2>
+
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Metodo</th><th>Monto</th><th>% del Total</th><th>Transacciones</th><th>Ticket Prom.</th><th>Tendencia</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Efectivo</td><td class="num">$1,586M</td><td class="num">81.8%</td><td class="num">169,161</td><td class="num">$9,375</td><td class="bad">Decreciente (90%→74%)</td></tr>
+                <tr><td>Tarj. Debito</td><td class="num">$254M</td><td class="num">13.1%</td><td class="num">18,040</td><td class="num">$14,059</td><td class="good">Estable/creciendo</td></tr>
+                <tr><td>Codigo QR</td><td class="num">$97M</td><td class="num">5.0%</td><td class="num">8,199</td><td class="num">$11,773</td><td class="good">Crecimiento rapido (2%→9%)</td></tr>
+                <tr><td>Tarj. Credito</td><td class="num">$5.0M</td><td class="num">0.3%</td><td class="num">372</td><td class="num">$13,373</td><td>Minimo</td></tr>
+                <tr><td>Transferencia</td><td class="num">$3.7M</td><td class="num">0.2%</td><td class="num">276</td><td class="num">$13,520</td><td>Emergente</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="insight-box">
+        <div class="insight-label">Dato Clave</div>
+        <p>Los clientes que pagan con tarjeta debito gastan en promedio <strong>$14,059 — un 50% mas</strong> que los que pagan en efectivo ($9,375). QR tambien muestra ticket superior ($11,773). Promover pagos digitales no solo reduce costos operativos de manejo de efectivo, sino que correlaciona con tickets mas altos. La transicion de 90% efectivo (2022) a 74% (2026) es positiva pero debe acelerarse.</p>
+    </div>
+</section>
+
+<!-- 7. STAFF -->
+<section class="section" id="staff">
+    <h2>7. Rendimiento del Equipo</h2>
+
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Mesero/a</th><th>Ingresos</th><th>% Total</th><th>Ventas</th><th>Ticket Prom.</th><th>Evaluacion</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Manuel</td><td class="num">$824.7M</td><td class="num bad">42.5%</td><td class="num">83,694</td><td class="num">$9,853</td><td class="warn">Alta concentracion</td></tr>
+                <tr><td>Cristian David</td><td class="num">$404.1M</td><td class="num">20.8%</td><td class="num">38,076</td><td class="num good">$10,614</td><td class="good">Solido #2</td></tr>
+                <tr><td>Daniela Orrego</td><td class="num">$335.8M</td><td class="num">17.3%</td><td class="num">40,734</td><td class="num bad">$8,243</td><td class="warn">Ticket bajo</td></tr>
+                <tr><td>Cristian Monroy</td><td class="num">$189.6M</td><td class="num">9.8%</td><td class="num">16,724</td><td class="num good">$11,339</td><td class="good">Mejor ticket prom.</td></tr>
+                <tr><td>Eduardo</td><td class="num">$74.3M</td><td class="num">3.8%</td><td class="num">6,274</td><td class="num good">$11,850</td><td class="good">Alto valor por venta</td></tr>
+                <tr><td>Alejandro</td><td class="num">$43.8M</td><td class="num">2.3%</td><td class="num">4,032</td><td class="num good">$10,860</td><td>En desarrollo</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="highlight-grid">
+        <div class="highlight-card red">
+            <div class="card-title">Riesgo de Concentracion</div>
+            <div class="card-value">42.5%</div>
+            <div class="card-desc">Manuel maneja casi la mitad del ingreso. Si faltara, el impacto seria critico.</div>
+        </div>
+        <div class="highlight-card yellow">
+            <div class="card-title">Oportunidad de Upselling</div>
+            <div class="card-value">$8,243</div>
+            <div class="card-desc">Daniela tiene el mayor volumen pero el menor ticket. Capacitacion en upselling podria agregar $1,000+/ticket.</div>
+        </div>
+        <div class="highlight-card green">
+            <div class="card-title">Mejor Practica</div>
+            <div class="card-value">$11,850</div>
+            <div class="card-desc">Eduardo logra el ticket mas alto. Sus tecnicas deben replicarse al equipo.</div>
+        </div>
+    </div>
+</section>
+
+<!-- 8. TIME PATTERNS -->
+<section class="section" id="time">
+    <h2>8. Patrones de Horario y Oportunidades</h2>
+
+    <h3>8.1 Distribucion Horaria del Ingreso</h3>
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Franja</th><th>Horario</th><th>Ingreso Estimado</th><th>% del Dia</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Manana</td><td>6:00 - 11:00</td><td class="num">~15%</td><td class="num">Bajo</td><td class="warn">Sub-aprovechado</td></tr>
+                <tr><td>Almuerzo</td><td>12:00 - 16:00</td><td class="num">~45%</td><td class="num">Alto</td><td class="good">Hora pico</td></tr>
+                <tr><td>Tarde</td><td>17:00 - 18:00</td><td class="num">~8%</td><td class="num">Bajo</td><td class="bad">Valle pronunciado</td></tr>
+                <tr><td>Noche</td><td>19:00 - 22:00</td><td class="num">~32%</td><td class="num">Alto</td><td class="good">Segundo pico</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>8.2 Hora Pico: 14:00</h3>
+    <p>La hora con mayor facturacion es las <strong>2:00 PM con $346M acumulados</strong> en el periodo, seguida de las 3:00 PM ($344M). El bloque 13:00-16:00 concentra el mayor trafico y debe recibir prioridad en staffing y preparacion.</p>
+
+    <h3>8.3 El "Valle de las 5 PM"</h3>
+    <p>Existe un <strong>gap significativo entre las 17:00 y 18:00</strong> donde el ingreso cae antes de recuperarse a las 19:00-21:00. Esta es una oportunidad para promociones tipo "happy hour" o descuentos en bebidas frias que incentiven visitas en este horario.</p>
+
+    <div class="insight-box">
+        <div class="insight-label">Oportunidad: Lunes y Sabado</div>
+        <p>Lunes genera solo 14.9% del ingreso semanal vs 19-20% de Martes-Viernes. Un programa de fidelidad con beneficios especiales los Lunes ("Lunes de Latte" con descuento en 2da bebida) podria incrementar el trafico de Lunes en un 15-20%, equivalente a ~$43M adicionales al ano. Sabado (9.3%) tambien tiene espacio de crecimiento.</p>
+    </div>
+</section>
+
+<!-- 9. RECOMMENDATIONS -->
+<section class="section" id="recommendations">
+    <h2>9. Plan de Accion: 12 Recomendaciones</h2>
+
+    <h3>Prioridad Alta — Implementar en 1-4 semanas</h3>
+
+    <div class="rec-card high">
+        <div class="rec-header">
+            <span class="rec-title">1. Corregir Margenes de Sandwiches</span>
+            <span class="rec-badge">Urgente</span>
+        </div>
+        <p>Los Sandwich Baguette (48.7%) y Sandwich Tradicional (50.8%) son los productos de mayor ingreso con peor margen. Representan $96.5M en ingresos pero dejan de ganar ~$19.4M comparado con un margen del 70%.</p>
+        <ul>
+            <li><strong>Accion:</strong> Renegociar costo de ingredientes (jamon, queso, pan baguette). Evaluar reduccion de gramaje o cambio de proveedor.</li>
+            <li><strong>Alternativa:</strong> Incrementar precio un 10-15% ($8,400 → $9,500). Probar con Sandwich Baguette primero.</li>
+            <li><strong>Monitorear:</strong> Elasticidad de demanda durante 4 semanas. Si volumen cae &lt;10%, el aumento es rentable.</li>
+        </ul>
+        <div class="impact">Impacto estimado: +$5-8M anuales en margen</div>
+    </div>
+
+    <div class="rec-card high">
+        <div class="rec-header">
+            <span class="rec-title">2. Programa de Combos para Incrementar Ticket</span>
+            <span class="rec-badge">Urgente</span>
+        </div>
+        <p>El ticket promedio de $9,897 con 2.1 items es bajo para un cafe premium. El objetivo deberia ser $12,000+ y 2.5 items.</p>
+        <ul>
+            <li><strong>Combo Desayuno:</strong> Bebida caliente (7oz) + 1 producto panaderia = precio especial ($10,500 vs $11,500+ individual)</li>
+            <li><strong>Combo Tarde:</strong> Granizado/bebida fria + snack o galleta</li>
+            <li><strong>Upgrade automático:</strong> Entrenar staff para ofrecer siempre "lo quiere en 9oz?" (+$1,500-2,000 por bebida)</li>
+        </ul>
+        <div class="impact">Impacto estimado: Si el ticket sube $1,500 → +$293M anuales en ingresos</div>
+    </div>
+
+    <div class="rec-card high">
+        <div class="rec-header">
+            <span class="rec-title">3. Reducir Dependencia de Manuel</span>
+            <span class="rec-badge">Urgente</span>
+        </div>
+        <p>Un solo colaborador maneja el 42.5% del ingreso. Esto es un riesgo operativo critico (vacaciones, enfermedad, renuncia).</p>
+        <ul>
+            <li><strong>Accion inmediata:</strong> Documentar los procesos y tecnicas de Manuel</li>
+            <li><strong>Cross-training:</strong> Asegurar que al menos 2 personas mas puedan cubrir su rol completamente</li>
+            <li><strong>Plan de incentivos:</strong> Programa de bonus para staff que supere ticket promedio de $10,500</li>
+        </ul>
+        <div class="impact">Impacto: Mitigacion de riesgo operativo critico</div>
+    </div>
+
+    <div class="rec-card high">
+        <div class="rec-header">
+            <span class="rec-title">4. Capacitacion en Upselling para Daniela</span>
+            <span class="rec-badge">Urgente</span>
+        </div>
+        <p>Daniela tiene el <strong>mayor volumen de transacciones</strong> (40,734) pero el <strong>ticket mas bajo</strong> ($8,243) — $1,654 menos que el promedio. Tiene la habilidad de atender rapido; le falta la venta sugestiva.</p>
+        <ul>
+            <li><strong>Coaching:</strong> Sesiones con Eduardo (ticket $11,850) para aprender sus tecnicas</li>
+            <li><strong>Script sugerido:</strong> "¿Le agrego un croissant de almendras?" / "¿Lo quiere de 9oz?"</li>
+            <li><strong>Meta:</strong> Subir su ticket de $8,243 a $9,500 en 8 semanas</li>
+        </ul>
+        <div class="impact">Impacto estimado: Si sube a $9,500 → +$51M adicionales en el periodo</div>
+    </div>
+
+    <h3>Prioridad Media — Implementar en 1-3 meses</h3>
+
+    <div class="rec-card medium">
+        <div class="rec-header">
+            <span class="rec-title">5. Acelerar Adopcion de Pagos Digitales</span>
+            <span class="rec-badge">Medio</span>
+        </div>
+        <p>Los clientes con tarjeta debito gastan 50% mas ($14,059 vs $9,375 en efectivo). Mayor adopcion digital = mayor ticket promedio automaticamente.</p>
+        <ul>
+            <li>Asegurar que el POS con QR y tarjeta este siempre visible y funcional</li>
+            <li>Considerar descuento del 5% para pagos con QR/Nequi en horarios valle</li>
+            <li>Meta: Reducir efectivo de 74% a 60% en 6 meses</li>
+        </ul>
+        <div class="impact">Impacto: Reduccion de costos operativos + aumento organico del ticket promedio</div>
+    </div>
+
+    <div class="rec-card medium">
+        <div class="rec-header">
+            <span class="rec-title">6. Promocion "Lunes de Latte"</span>
+            <span class="rec-badge">Medio</span>
+        </div>
+        <p>Los Lunes generan 14.9% del ingreso semanal vs 19-20% de Martes a Viernes — un deficit de ~$100M anuales en ingresos potenciales.</p>
+        <ul>
+            <li>Ofrecer 2x1 en tamano upgrade (pagar 7oz, llevar 9oz) los Lunes</li>
+            <li>Programa de lealtad: Compra Lunes, acumula puntos dobles</li>
+            <li>Comunicar en redes sociales y en punto de venta</li>
+        </ul>
+        <div class="impact">Impacto estimado: Si Lunes sube al 17% → +$40M anuales</div>
+    </div>
+
+    <div class="rec-card medium">
+        <div class="rec-header">
+            <span class="rec-title">7. "Happy Hour" de 5 a 6 PM</span>
+            <span class="rec-badge">Medio</span>
+        </div>
+        <p>El valle de 17:00-18:00 es una oportunidad para captar trafico con promociones enfocadas en bebidas frias y snacks.</p>
+        <ul>
+            <li>Descuento del 15% en Granizado Cafe (84.9% margen — puede absorber el descuento)</li>
+            <li>Combo "tarde": Bebida fria + galleta por $10,000</li>
+            <li>Ejecutar durante 2 meses y medir impacto</li>
+        </ul>
+        <div class="impact">Impacto estimado: Capturar $15-25M anuales del valle horario</div>
+    </div>
+
+    <div class="rec-card medium">
+        <div class="rec-header">
+            <span class="rec-title">8. Promover Adiciones (Margen 90.6%)</span>
+            <span class="rec-badge">Medio</span>
+        </div>
+        <p>Las adiciones (vainilla, whiskey, baileys, michelada) tienen 90.6% de margen pero solo generan $3.3M. Esto es dinero casi gratis que se esta dejando en la mesa.</p>
+        <ul>
+            <li>Entrenar staff: "¿Le agrego un shot de vainilla?" en cada latte/capuccino</li>
+            <li>Menu board visible con opciones de adiciones y precios</li>
+            <li>Meta: Duplicar ventas de adiciones de $3.3M a $6.6M</li>
+        </ul>
+        <div class="impact">Impacto estimado: +$3M anuales en ganancia pura (90.6% margen)</div>
+    </div>
+
+    <h3>Prioridad Estrategica — 3 a 6 meses</h3>
+
+    <div class="rec-card low">
+        <div class="rec-header">
+            <span class="rec-title">9. Expandir Bebidas Frias</span>
+            <span class="rec-badge">Estrategico</span>
+        </div>
+        <p>Las bebidas frias representan solo el 9.8% del ingreso. El Granizado Cafe ($25M, 84.9% margen) demuestra que hay demanda por opciones frias premium.</p>
+        <ul>
+            <li>Desarrollar 2-3 nuevas opciones de bebidas frias propias (no embotelladas) con margen >75%</li>
+            <li>Reducir dependencia de bebidas embotelladas de terceros (Coca-Cola 56.7%, Fuze Tea 37-39% margen)</li>
+            <li>Crear una linea de "Mocawa Cold Brew" o "Frappes artesanales"</li>
+        </ul>
+        <div class="impact">Impacto: Crecer la categoria de $275M a $400M+ con margenes >75%</div>
+    </div>
+
+    <div class="rec-card low">
+        <div class="rec-header">
+            <span class="rec-title">10. Evaluar Apertura Dominical</span>
+            <span class="rec-badge">Estrategico</span>
+        </div>
+        <p>El Domingo no opera (solo 1 venta registrada). Dado el crecimiento del negocio y que el Sabado genera $179.9M, un Domingo con horario reducido podria ser rentable.</p>
+        <ul>
+            <li>Piloto: Abrir Domingos de 8:00 AM a 2:00 PM por 3 meses</li>
+            <li>Staff minimo: 2 personas</li>
+            <li>Si alcanza el 60% del Sabado = ~$108M anuales adicionales</li>
+        </ul>
+        <div class="impact">Impacto potencial: $80-120M anuales en ingresos nuevos</div>
+    </div>
+
+    <div class="rec-card low">
+        <div class="rec-header">
+            <span class="rec-title">11. Implementar Sistema de Fidelizacion</span>
+            <span class="rec-badge">Estrategico</span>
+        </div>
+        <p>Con 195,962 transacciones y casi cero descuentos/propinas registradas, no hay evidencia de un programa de lealtad activo.</p>
+        <ul>
+            <li>Tarjeta o app: "10 cafes = 1 gratis" (costo real: ~$1,200 por recompensa, retorno: 10 visitas de ~$10,000)</li>
+            <li>Beneficios escalonados: Bronce, Plata, Oro</li>
+            <li>Captura de datos del cliente para marketing dirigido</li>
+        </ul>
+        <div class="impact">Impacto: Incremento del 10-15% en frecuencia de visita de clientes recurrentes</div>
+    </div>
+
+    <div class="rec-card low">
+        <div class="rec-header">
+            <span class="rec-title">12. Mejorar Captura de Datos de Gastos</span>
+            <span class="rec-badge">Estrategico</span>
+        </div>
+        <p>Los gastos registrados ($21.7M) representan solo el 1.1% de los ingresos — claramente incompletos. Sin datos reales de gastos operativos (nomina, arriendo, servicios, insumos) es imposible calcular la rentabilidad neta real.</p>
+        <ul>
+            <li>Configurar FUDO para registrar todas las categorias de gasto</li>
+            <li>Implementar P&L mensual: Ingresos - COGS - Gastos Operativos = Utilidad Neta</li>
+            <li>Esto permitira decisiones basadas en datos reales, no estimaciones</li>
+        </ul>
+        <div class="impact">Impacto: Visibilidad real de la rentabilidad neta y oportunidades de ahorro</div>
+    </div>
+</section>
+
+<!-- 10. ROADMAP -->
+<section class="section" id="roadmap">
+    <h2>10. Hoja de Ruta (Roadmap)</h2>
+
+    <div class="data-table-wrap">
+        <table>
+            <thead>
+                <tr><th>Fase</th><th>Periodo</th><th>Acciones</th><th>Impacto Estimado</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Fase 1</strong><br><em>Quick Wins</em></td>
+                    <td>Semanas 1-4</td>
+                    <td>
+                        Ajustar precios de sandwiches (+10%)<br>
+                        Iniciar combos bebida+panaderia<br>
+                        Capacitacion upselling a Daniela<br>
+                        Documentar procesos de Manuel
+                    </td>
+                    <td class="good">+$15-20M anuales</td>
+                </tr>
+                <tr>
+                    <td><strong>Fase 2</strong><br><em>Optimizacion</em></td>
+                    <td>Meses 2-3</td>
+                    <td>
+                        Lanzar "Lunes de Latte"<br>
+                        Happy hour 5-6 PM<br>
+                        Promover adiciones activamente<br>
+                        Instalar mas terminales digitales
+                    </td>
+                    <td class="good">+$40-60M anuales</td>
+                </tr>
+                <tr>
+                    <td><strong>Fase 3</strong><br><em>Crecimiento</em></td>
+                    <td>Meses 3-6</td>
+                    <td>
+                        Lanzar linea bebidas frias premium<br>
+                        Piloto apertura dominical<br>
+                        Implementar programa de fidelidad<br>
+                        P&L mensual completo
+                    </td>
+                    <td class="good">+$100-150M anuales</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="highlight-grid">
+        <div class="highlight-card green" style="grid-column: 1 / -1; text-align: center;">
+            <div class="card-title">Impacto Total Estimado del Plan de Accion</div>
+            <div class="card-value" style="font-size: 2.2rem;">+$155M — $230M anuales</div>
+            <div class="card-desc">Equivalente a un incremento del 20-30% sobre el ingreso actual, alcanzable en 6 meses con ejecucion disciplinada</div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <p>Mocawa Cafe — Analisis Estrategico BI | Generado con datos de FUDO POS</p>
+    <p style="margin-top: 6px;"><a href="index.html">&larr; Volver al Dashboard Interactivo</a></p>
+</footer>
+
+</body>
+</html>
