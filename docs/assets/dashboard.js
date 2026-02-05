@@ -1,20 +1,89 @@
 /* ═══════════════════════════════════════════════════════════
-   Mocawa Cafe — Static Dashboard JS
+   Mocawa Cafe — Static Dashboard JS (Premium Edition)
    ═══════════════════════════════════════════════════════════ */
 
-const COLORS = ["#ff5023","#ff8c61","#ffc09f","#2ec4b6","#3d5a80","#ee6c4d","#293241","#98c1d9"];
-const PASTEL = Plotly.d3 ? null : ["#b5e8d5","#f9d5bb","#d4a5ff","#a5d8ff","#ffd6a5","#ffadad","#caffbf","#bdb2ff"];
-const SET2 = ["#66c2a5","#fc8d62","#8da0cb","#e78ac3","#a6d854","#ffd92f","#e5c494","#b3b3b3"];
+// Premium color palette - sophisticated & modern
+const PALETTE = {
+    primary: "#ff6b3d",      // Warm orange
+    secondary: "#00d4aa",    // Teal/mint
+    accent: "#7c5cff",       // Purple
+    success: "#22c55e",      // Green
+    warning: "#f59e0b",      // Amber
+    danger: "#ef4444",       // Red
+    info: "#3b82f6",         // Blue
+};
 
+// Chart color sequences
+const CHART_COLORS = [
+    "#ff6b3d", "#00d4aa", "#7c5cff", "#f59e0b",
+    "#3b82f6", "#ec4899", "#14b8a6", "#8b5cf6",
+    "#06b6d4", "#f97316", "#84cc16", "#6366f1"
+];
+
+const GRADIENT_COLORS = [
+    ["#ff6b3d", "#ff8f6b"],
+    ["#00d4aa", "#00f5c4"],
+    ["#7c5cff", "#a78bfa"],
+    ["#3b82f6", "#60a5fa"],
+];
+
+// Warm sequential for heatmaps
+const HEATMAP_WARM = [
+    [0, "#1a1a2e"],
+    [0.2, "#2d1f3d"],
+    [0.4, "#6b2c5a"],
+    [0.6, "#c44536"],
+    [0.8, "#ff6b3d"],
+    [1, "#ffd93d"]
+];
+
+const HEATMAP_COOL = [
+    [0, "#0f172a"],
+    [0.2, "#1e3a5f"],
+    [0.4, "#0d9488"],
+    [0.6, "#00d4aa"],
+    [0.8, "#5eead4"],
+    [1, "#ccfbf1"]
+];
+
+// Premium layout defaults
 const plotlyLayout = {
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
-    font: { color: "#fafafa", size: 12 },
-    margin: { l: 50, r: 50, t: 30, b: 50 },
-    xaxis: { gridcolor: "#2a2a3e", zerolinecolor: "#2a2a3e" },
-    yaxis: { gridcolor: "#2a2a3e", zerolinecolor: "#2a2a3e" },
+    font: {
+        color: "#e2e8f0",
+        size: 12,
+        family: "Inter, system-ui, sans-serif"
+    },
+    margin: { l: 60, r: 40, t: 40, b: 60 },
+    xaxis: {
+        gridcolor: "rgba(148, 163, 184, 0.1)",
+        zerolinecolor: "rgba(148, 163, 184, 0.2)",
+        linecolor: "rgba(148, 163, 184, 0.2)",
+        tickfont: { color: "#94a3b8" }
+    },
+    yaxis: {
+        gridcolor: "rgba(148, 163, 184, 0.1)",
+        zerolinecolor: "rgba(148, 163, 184, 0.2)",
+        linecolor: "rgba(148, 163, 184, 0.2)",
+        tickfont: { color: "#94a3b8" }
+    },
+    hoverlabel: {
+        bgcolor: "#1e293b",
+        bordercolor: "#475569",
+        font: { color: "#f1f5f9", size: 13 }
+    },
+    legend: {
+        bgcolor: "rgba(0,0,0,0)",
+        font: { color: "#94a3b8" }
+    }
 };
-const plotlyConfig = { responsive: true, displayModeBar: false };
+
+const plotlyConfig = {
+    responsive: true,
+    displayModeBar: false,
+    scrollZoom: false
+};
 
 // ─── Helpers ──────────────────────────────────────────────
 const cache = {};
@@ -40,11 +109,18 @@ function fmtPct(v) {
     return v.toFixed(1) + "%";
 }
 
-function L(base, overrides) {
-    return Object.assign({}, plotlyLayout, overrides, {
-        xaxis: Object.assign({}, plotlyLayout.xaxis, (overrides && overrides.xaxis) || {}),
-        yaxis: Object.assign({}, plotlyLayout.yaxis, (overrides && overrides.yaxis) || {}),
-    });
+function L(overrides) {
+    const base = JSON.parse(JSON.stringify(plotlyLayout));
+    if (overrides) {
+        Object.keys(overrides).forEach(key => {
+            if (key === 'xaxis' || key === 'yaxis' || key === 'yaxis2') {
+                base[key] = { ...base[key === 'yaxis2' ? 'yaxis' : key], ...overrides[key] };
+            } else {
+                base[key] = overrides[key];
+            }
+        });
+    }
+    return base;
 }
 
 function buildTable(headers, rows, alignments) {
@@ -146,7 +222,6 @@ async function renderOverview() {
     renderHistogram(d);
     renderBoxplot(d);
 
-    // Granularity toggle
     document.querySelectorAll('#granularity input[name="gran"]').forEach(radio => {
         radio.addEventListener("change", () => renderRevenueChart(radio.value));
     });
@@ -158,23 +233,29 @@ function renderRevenueChart(gran) {
     const traces = [
         {
             x: src.dates, y: src.ingresos, name: "Ingresos",
-            type: "scatter", fill: "tozeroy", fillcolor: "rgba(255,80,35,0.1)",
-            line: { color: "#ff5023" },
+            type: "scatter", fill: "tozeroy",
+            fillcolor: "rgba(255, 107, 61, 0.15)",
+            line: { color: PALETTE.primary, width: 3, shape: "spline" },
+            marker: { size: 6 }
         },
         {
             x: src.dates, y: src.ventas, name: "# Ventas",
-            type: "bar", marker: { color: "rgba(46,196,182,0.5)" },
+            type: "bar",
+            marker: {
+                color: "rgba(0, 212, 170, 0.4)",
+                line: { color: PALETTE.secondary, width: 1 }
+            },
             yaxis: "y2",
         },
     ];
-    const layout = L({
-        yaxis: { title: "Ingresos ($)", gridcolor: "#2a2a3e" },
-        yaxis2: { title: "# Ventas", overlaying: "y", side: "right", gridcolor: "#2a2a3e" },
+    Plotly.react("chart-revenue", traces, L({
+        yaxis: { title: "Ingresos ($)" },
+        yaxis2: { title: "# Ventas", overlaying: "y", side: "right" },
         hovermode: "x unified",
         height: 420,
-        legend: { orientation: "h", y: 1.12 },
-    });
-    Plotly.react("chart-revenue", traces, layout, plotlyConfig);
+        legend: { orientation: "h", y: 1.12, x: 0.5, xanchor: "center" },
+        bargap: 0.3,
+    }), plotlyConfig);
 }
 
 function renderYoY(d) {
@@ -184,18 +265,20 @@ function renderYoY(d) {
         traces.push({
             x: yrData.map(r => r.month),
             y: yrData.map(r => r.ingresos),
-            name: yr, mode: "lines+markers",
-            line: { color: COLORS[i % COLORS.length] },
-            marker: { color: COLORS[i % COLORS.length] },
+            name: yr,
+            mode: "lines+markers",
+            line: { color: CHART_COLORS[i % CHART_COLORS.length], width: 3, shape: "spline" },
+            marker: { color: CHART_COLORS[i % CHART_COLORS.length], size: 8 },
         });
     });
     const tickVals = [1,2,3,4,5,6,7,8,9,10,11,12];
     const tickText = Object.values(d.month_names);
-    const layout = L({
-        xaxis: { tickmode: "array", tickvals: tickVals, ticktext: tickText, gridcolor: "#2a2a3e" },
-        height: 400, hovermode: "x unified",
-    });
-    Plotly.react("chart-yoy", traces, layout, plotlyConfig);
+    Plotly.react("chart-yoy", traces, L({
+        xaxis: { tickmode: "array", tickvals: tickVals, ticktext: tickText },
+        height: 400,
+        hovermode: "x unified",
+        legend: { orientation: "h", y: 1.12 },
+    }), plotlyConfig);
 }
 
 function renderTypeTrend(d) {
@@ -204,62 +287,121 @@ function renderTypeTrend(d) {
         const rows = d.type_trend.filter(r => r.tipo === t);
         return {
             x: rows.map(r => r.mes), y: rows.map(r => r.ventas),
-            name: t, stackgroup: "one", fillcolor: SET2[i % SET2.length] + "80",
-            line: { color: SET2[i % SET2.length] },
+            name: t, stackgroup: "one",
+            fillcolor: CHART_COLORS[i % CHART_COLORS.length] + "60",
+            line: { color: CHART_COLORS[i % CHART_COLORS.length], width: 0 },
         };
     });
-    Plotly.react("chart-type-trend", traces, L({ height: 400, hovermode: "x unified" }), plotlyConfig);
+    Plotly.react("chart-type-trend", traces, L({
+        height: 400,
+        hovermode: "x unified",
+        legend: { orientation: "h", y: 1.12 },
+    }), plotlyConfig);
 }
 
 function renderDoW(d) {
+    const colors = d.dow.map((_, i) => {
+        const intensity = 0.5 + (i / d.dow.length) * 0.5;
+        return `rgba(255, 107, 61, ${intensity})`;
+    });
     const traces = [{
-        x: d.dow.map(r => r.dia), y: d.dow.map(r => r.ingresos),
-        type: "bar", marker: { color: "#ff5023" },
+        x: d.dow.map(r => r.dia),
+        y: d.dow.map(r => r.ingresos),
+        type: "bar",
+        marker: {
+            color: colors,
+            line: { color: PALETTE.primary, width: 2 }
+        },
         text: d.dow.map(r => fmtN(r.ventas) + " ventas"),
         textposition: "outside",
+        textfont: { color: "#94a3b8", size: 11 }
     }];
-    Plotly.react("chart-dow", traces, L({ height: 400, yaxis: { title: "Ingresos ($)", gridcolor: "#2a2a3e" } }), plotlyConfig);
+    Plotly.react("chart-dow", traces, L({
+        height: 400,
+        yaxis: { title: "Ingresos ($)" },
+        bargap: 0.3,
+    }), plotlyConfig);
 }
 
 function renderTypeDist(d) {
     Plotly.react("chart-type-dist", [{
         values: d.type_dist.map(r => r.ingresos),
         labels: d.type_dist.map(r => r.sale_type),
-        type: "pie", hole: 0.45,
-        marker: { colors: COLORS },
-        textinfo: "label+percent+value",
-        texttemplate: "%{label}<br>%{percent}<br>$%{value:,.0f}",
-        textfont: { color: "#fafafa" },
-    }], L({ height: 400 }), plotlyConfig);
+        type: "pie",
+        hole: 0.55,
+        marker: {
+            colors: CHART_COLORS,
+            line: { color: "#0f172a", width: 2 }
+        },
+        textinfo: "label+percent",
+        textposition: "outside",
+        textfont: { color: "#e2e8f0", size: 12 },
+        hovertemplate: "<b>%{label}</b><br>$%{value:,.0f}<br>%{percent}<extra></extra>",
+        pull: [0.02, 0, 0, 0],
+    }], L({
+        height: 400,
+        showlegend: false,
+        annotations: [{
+            text: '<b>Por Tipo</b>',
+            x: 0.5, y: 0.5,
+            font: { size: 14, color: '#94a3b8' },
+            showarrow: false
+        }]
+    }), plotlyConfig);
 }
 
 function renderCumulative(d) {
     Plotly.react("chart-cumulative", [{
         x: d.cum_rev.dates, y: d.cum_rev.values,
-        type: "scatter", fill: "tozeroy", fillcolor: "rgba(46,196,182,0.15)",
-        line: { color: "#2ec4b6" },
-    }], L({ height: 380, hovermode: "x unified" }), plotlyConfig);
+        type: "scatter",
+        fill: "tozeroy",
+        fillcolor: "rgba(0, 212, 170, 0.1)",
+        line: { color: PALETTE.secondary, width: 3, shape: "spline" },
+    }], L({
+        height: 380,
+        hovermode: "x unified",
+        yaxis: { title: "Ingresos Acumulados ($)" }
+    }), plotlyConfig);
 }
 
 function renderGrowth(d) {
-    const colors = d.growth.values.map(v => v >= 0 ? "#2ec4b6" : "#ee6c4d");
+    const colors = d.growth.values.map(v => v >= 0 ? PALETTE.success : PALETTE.danger);
     Plotly.react("chart-growth", [{
         x: d.growth.dates, y: d.growth.values,
-        type: "bar", marker: { color: colors },
-    }], L({ height: 380, yaxis: { title: "Crecimiento %", gridcolor: "#2a2a3e" }, hovermode: "x unified" }), plotlyConfig);
+        type: "bar",
+        marker: {
+            color: colors,
+            line: { color: colors, width: 1 }
+        },
+    }], L({
+        height: 380,
+        yaxis: { title: "Crecimiento %", zeroline: true, zerolinecolor: "#475569", zerolinewidth: 2 },
+        hovermode: "x unified",
+        bargap: 0.4,
+    }), plotlyConfig);
 }
 
 function renderHistogram(d) {
-    // Convert bin edges+counts to bar chart
     const x = d.histogram.edges.slice(0, -1).map((e, i) => (e + d.histogram.edges[i + 1]) / 2);
     const widths = d.histogram.edges.slice(0, -1).map((e, i) => d.histogram.edges[i + 1] - e);
+    const maxCount = Math.max(...d.histogram.counts);
+    const colors = d.histogram.counts.map(c => {
+        const ratio = c / maxCount;
+        return `rgba(255, 107, 61, ${0.3 + ratio * 0.7})`;
+    });
+
     Plotly.react("chart-histogram", [{
         x: x, y: d.histogram.counts, type: "bar",
-        marker: { color: "#ff5023" }, width: widths,
+        marker: {
+            color: colors,
+            line: { color: PALETTE.primary, width: 1 }
+        },
+        width: widths,
     }], L({
-        height: 350, title: { text: "Histograma de Ticket", font: { color: "#fafafa", size: 14 } },
-        xaxis: { title: "Monto ($)", gridcolor: "#2a2a3e" },
-        yaxis: { title: "Frecuencia", gridcolor: "#2a2a3e" },
+        height: 350,
+        title: { text: "Distribucion del Ticket", font: { color: "#e2e8f0", size: 14 } },
+        xaxis: { title: "Monto ($)" },
+        yaxis: { title: "Frecuencia" },
         bargap: 0.05,
     }), plotlyConfig);
 }
@@ -269,13 +411,16 @@ function renderBoxplot(d) {
         type: "box", name: b.sale_type,
         q1: [b.q1], median: [b.median], q3: [b.q3],
         lowerfence: [b.whisker_lo], upperfence: [b.whisker_hi],
-        marker: { color: COLORS[i % COLORS.length] },
+        marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
+        line: { color: CHART_COLORS[i % CHART_COLORS.length] },
+        fillcolor: CHART_COLORS[i % CHART_COLORS.length] + "40",
     }));
     const maxY = Math.max(...d.boxplot.map(b => b.p95));
     Plotly.react("chart-boxplot", traces, L({
-        height: 350, title: { text: "Ticket por Tipo de Venta", font: { color: "#fafafa", size: 14 } },
+        height: 350,
+        title: { text: "Ticket por Tipo de Venta", font: { color: "#e2e8f0", size: 14 } },
         showlegend: false,
-        yaxis: { range: [0, maxY * 1.1], gridcolor: "#2a2a3e" },
+        yaxis: { range: [0, maxY * 1.1] },
     }), plotlyConfig);
 }
 
@@ -286,40 +431,78 @@ function renderBoxplot(d) {
 async function renderProducts() {
     const d = await fetchJSON("products.json");
 
-    // Top 20 by revenue
+    // Top 20 by revenue - gradient bars
+    const revColors = d.top_revenue.map((_, i) => {
+        const ratio = 1 - (i / d.top_revenue.length);
+        return `rgba(255, 107, 61, ${0.4 + ratio * 0.6})`;
+    });
+
     Plotly.react("chart-top-rev", [{
         y: d.top_revenue.map(r => r.product_name),
         x: d.top_revenue.map(r => r.revenue),
-        type: "bar", orientation: "h", marker: { color: "#ff5023" },
-        text: d.top_revenue.map(r => fmt$(r.revenue)), textposition: "outside",
+        type: "bar", orientation: "h",
+        marker: {
+            color: revColors,
+            line: { color: PALETTE.primary, width: 1 }
+        },
+        text: d.top_revenue.map(r => fmt$(r.revenue)),
+        textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
-        height: 550, yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
-        xaxis: { title: "Ingresos ($)", gridcolor: "#2a2a3e" },
+        height: 550,
+        yaxis: { autorange: "reversed" },
+        xaxis: { title: "Ingresos ($)" },
         margin: { l: 200 },
     }), plotlyConfig);
 
     // Top 20 by quantity
+    const qtyColors = d.top_qty.map((_, i) => {
+        const ratio = 1 - (i / d.top_qty.length);
+        return `rgba(0, 212, 170, ${0.4 + ratio * 0.6})`;
+    });
+
     Plotly.react("chart-top-qty", [{
         y: d.top_qty.map(r => r.product_name),
         x: d.top_qty.map(r => r.qty),
-        type: "bar", orientation: "h", marker: { color: "#2ec4b6" },
-        text: d.top_qty.map(r => fmtN(r.qty)), textposition: "outside",
+        type: "bar", orientation: "h",
+        marker: {
+            color: qtyColors,
+            line: { color: PALETTE.secondary, width: 1 }
+        },
+        text: d.top_qty.map(r => fmtN(r.qty)),
+        textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
-        height: 550, yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
-        xaxis: { title: "Cantidad", gridcolor: "#2a2a3e" },
+        height: 550,
+        yaxis: { autorange: "reversed" },
+        xaxis: { title: "Cantidad" },
         margin: { l: 200 },
     }), plotlyConfig);
 
-    // Category pie
+    // Category pie - premium donut
     Plotly.react("chart-cat-pie", [{
         values: d.category_breakdown.map(r => r.revenue),
         labels: d.category_breakdown.map(r => r.product_category),
-        type: "pie", hole: 0.4,
-        marker: { colors: SET2 },
-        textinfo: "label+percent+value",
-        texttemplate: "%{label}<br>%{percent}<br>$%{value:,.0f}",
-        textfont: { color: "#fafafa" },
-    }], L({ height: 400 }), plotlyConfig);
+        type: "pie",
+        hole: 0.55,
+        marker: {
+            colors: CHART_COLORS,
+            line: { color: "#0f172a", width: 3 }
+        },
+        textinfo: "label+percent",
+        textposition: "outside",
+        textfont: { color: "#e2e8f0", size: 12 },
+        hovertemplate: "<b>%{label}</b><br>$%{value:,.0f}<br>%{percent}<extra></extra>",
+    }], L({
+        height: 400,
+        showlegend: false,
+        annotations: [{
+            text: '<b>Categorias</b>',
+            x: 0.5, y: 0.5,
+            font: { size: 14, color: '#94a3b8' },
+            showarrow: false
+        }]
+    }), plotlyConfig);
 
     // Category trend
     const cats = [...new Set(d.category_trend.map(r => r.categoria))];
@@ -328,30 +511,44 @@ async function renderProducts() {
         return {
             x: rows.map(r => r.mes), y: rows.map(r => r.ingresos),
             name: c, stackgroup: "one",
-            fillcolor: SET2[i % SET2.length] + "80",
-            line: { color: SET2[i % SET2.length] },
+            fillcolor: CHART_COLORS[i % CHART_COLORS.length] + "70",
+            line: { color: CHART_COLORS[i % CHART_COLORS.length], width: 0 },
         };
     });
-    Plotly.react("chart-cat-trend", catTraces, L({ height: 400, hovermode: "x unified" }), plotlyConfig);
+    Plotly.react("chart-cat-trend", catTraces, L({
+        height: 400,
+        hovermode: "x unified",
+        legend: { orientation: "h", y: 1.15 },
+    }), plotlyConfig);
 
     // Treemap
-    const labels = [], parents = [], values = [];
+    const labels = [], parents = [], values = [], colors = [];
     const catSet = [...new Set(d.treemap.map(r => r.product_category))];
-    catSet.forEach(cat => {
+    catSet.forEach((cat, i) => {
         labels.push(cat);
         parents.push("");
         const catTotal = d.treemap.filter(r => r.product_category === cat).reduce((s, r) => s + r.revenue, 0);
         values.push(catTotal);
+        colors.push(CHART_COLORS[i % CHART_COLORS.length]);
     });
     d.treemap.forEach(r => {
         labels.push(r.product_name);
         parents.push(r.product_category);
         values.push(r.revenue);
+        const catIdx = catSet.indexOf(r.product_category);
+        colors.push(CHART_COLORS[catIdx % CHART_COLORS.length] + "90");
     });
+
     Plotly.react("chart-treemap", [{
         type: "treemap", labels, parents, values,
-        marker: { colorscale: "Oranges" },
-        textinfo: "label+value", texttemplate: "%{label}<br>$%{value:,.0f}",
+        marker: {
+            colors: colors,
+            line: { color: "#0f172a", width: 2 }
+        },
+        textinfo: "label+value",
+        texttemplate: "<b>%{label}</b><br>$%{value:,.0f}",
+        textfont: { color: "#fff" },
+        hovertemplate: "<b>%{label}</b><br>$%{value:,.0f}<extra></extra>",
     }], L({ height: 500 }), plotlyConfig);
 
     // Product table
@@ -376,26 +573,51 @@ async function renderPayments() {
         return;
     }
 
-    const PAY_COLORS = ["#b5e8d5","#f9d5bb","#d4a5ff","#a5d8ff","#ffd6a5","#ffadad","#caffbf","#bdb2ff"];
+    // Premium payment colors
+    const PAY_COLORS = ["#00d4aa", "#7c5cff", "#f59e0b", "#3b82f6", "#ec4899", "#14b8a6", "#8b5cf6", "#06b6d4"];
 
     // Distribution pie
     Plotly.react("chart-pay-dist", [{
         values: d.distribution.map(r => r.amount),
         labels: d.distribution.map(r => r.method),
-        type: "pie", hole: 0.4,
-        marker: { colors: PAY_COLORS },
-        textinfo: "label+percent+value",
-        texttemplate: "%{label}<br>%{percent}<br>$%{value:,.0f}",
-        textfont: { color: "#333" },
-    }], L({ height: 420 }), plotlyConfig);
+        type: "pie",
+        hole: 0.55,
+        marker: {
+            colors: PAY_COLORS,
+            line: { color: "#0f172a", width: 3 }
+        },
+        textinfo: "label+percent",
+        textposition: "outside",
+        textfont: { color: "#e2e8f0", size: 12 },
+        hovertemplate: "<b>%{label}</b><br>$%{value:,.0f}<br>%{percent}<extra></extra>",
+    }], L({
+        height: 420,
+        showlegend: false,
+        annotations: [{
+            text: '<b>Metodos</b>',
+            x: 0.5, y: 0.5,
+            font: { size: 14, color: '#94a3b8' },
+            showarrow: false
+        }]
+    }), plotlyConfig);
 
     // Transaction count
     Plotly.react("chart-pay-count", [{
         x: d.transaction_count.map(r => r.method),
         y: d.transaction_count.map(r => r.transactions),
         type: "bar",
-        marker: { color: PAY_COLORS.slice(0, d.transaction_count.length) },
-    }], L({ height: 420, showlegend: false }), plotlyConfig);
+        marker: {
+            color: PAY_COLORS.slice(0, d.transaction_count.length),
+            line: { color: PAY_COLORS.slice(0, d.transaction_count.length), width: 2 }
+        },
+        text: d.transaction_count.map(r => fmtN(r.transactions)),
+        textposition: "outside",
+        textfont: { color: "#94a3b8" },
+    }], L({
+        height: 420,
+        showlegend: false,
+        bargap: 0.4,
+    }), plotlyConfig);
 
     // Payment trend
     const methods = [...new Set(d.trend.map(r => r.method))];
@@ -404,14 +626,16 @@ async function renderPayments() {
         return {
             x: rows.map(r => r.year_month), y: rows.map(r => r.amount),
             name: m, stackgroup: "one",
-            fillcolor: PAY_COLORS[i % PAY_COLORS.length] + "cc",
-            line: { color: PAY_COLORS[i % PAY_COLORS.length] },
+            fillcolor: PAY_COLORS[i % PAY_COLORS.length] + "80",
+            line: { color: PAY_COLORS[i % PAY_COLORS.length], width: 0 },
         };
     });
     Plotly.react("chart-pay-trend", trendTraces, L({
-        height: 400, hovermode: "x unified",
-        xaxis: { title: "Mes", gridcolor: "#2a2a3e" },
-        yaxis: { title: "Monto ($)", gridcolor: "#2a2a3e" },
+        height: 400,
+        hovermode: "x unified",
+        xaxis: { title: "Mes" },
+        yaxis: { title: "Monto ($)" },
+        legend: { orientation: "h", y: 1.15 },
     }), plotlyConfig);
 
     // Payment share %
@@ -420,13 +644,15 @@ async function renderPayments() {
         return {
             x: rows.map(r => r.year_month), y: rows.map(r => r.pct),
             name: m, stackgroup: "one", groupnorm: "percent",
-            fillcolor: PAY_COLORS[i % PAY_COLORS.length] + "cc",
-            line: { color: PAY_COLORS[i % PAY_COLORS.length] },
+            fillcolor: PAY_COLORS[i % PAY_COLORS.length] + "90",
+            line: { color: PAY_COLORS[i % PAY_COLORS.length], width: 0 },
         };
     });
     Plotly.react("chart-pay-share", shareTraces, L({
-        height: 400, hovermode: "x unified",
-        yaxis: { title: "% del Total", gridcolor: "#2a2a3e" },
+        height: 400,
+        hovermode: "x unified",
+        yaxis: { title: "% del Total" },
+        legend: { orientation: "h", y: 1.15 },
     }), plotlyConfig);
 
     // Average per method
@@ -434,12 +660,18 @@ async function renderPayments() {
         x: d.avg_per_method.map(r => r.method),
         y: d.avg_per_method.map(r => r.avg_amount),
         type: "bar",
-        marker: { color: PAY_COLORS.slice(0, d.avg_per_method.length) },
+        marker: {
+            color: PAY_COLORS.slice(0, d.avg_per_method.length),
+            line: { color: "#0f172a", width: 2 }
+        },
         text: d.avg_per_method.map(r => fmt$(r.avg_amount)),
         textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
-        height: 380, showlegend: false,
-        yaxis: { title: "Monto Promedio ($)", gridcolor: "#2a2a3e" },
+        height: 380,
+        showlegend: false,
+        yaxis: { title: "Monto Promedio ($)" },
+        bargap: 0.4,
     }), plotlyConfig);
 }
 
@@ -452,27 +684,51 @@ async function renderStaff() {
 
     const top15 = d.waiter_stats.slice(0, 15);
 
-    // Revenue by waiter
+    // Revenue by waiter - gradient
+    const revColors = top15.map((_, i) => {
+        const ratio = 1 - (i / top15.length);
+        return `rgba(255, 107, 61, ${0.4 + ratio * 0.6})`;
+    });
+
     Plotly.react("chart-waiter-rev", [{
         y: top15.map(r => r.waiter),
         x: top15.map(r => r.ingresos),
-        type: "bar", orientation: "h", marker: { color: "#ff5023" },
-        text: top15.map(r => fmt$(r.ingresos)), textposition: "outside",
+        type: "bar", orientation: "h",
+        marker: {
+            color: revColors,
+            line: { color: PALETTE.primary, width: 1 }
+        },
+        text: top15.map(r => fmt$(r.ingresos)),
+        textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
-        height: 480, yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
+        height: 480,
+        yaxis: { autorange: "reversed" },
         margin: { l: 160 },
     }), plotlyConfig);
 
     // Avg ticket by waiter
     const byTicket = [...d.waiter_stats].sort((a, b) => b.ticket_prom - a.ticket_prom).slice(0, 15);
+    const ticketColors = byTicket.map((_, i) => {
+        const ratio = 1 - (i / byTicket.length);
+        return `rgba(0, 212, 170, ${0.4 + ratio * 0.6})`;
+    });
+
     Plotly.react("chart-waiter-ticket", [{
         y: byTicket.map(r => r.waiter),
         x: byTicket.map(r => r.ticket_prom),
-        type: "bar", orientation: "h", marker: { color: "#2ec4b6" },
-        text: byTicket.map(r => fmt$(r.ticket_prom)), textposition: "outside",
+        type: "bar", orientation: "h",
+        marker: {
+            color: ticketColors,
+            line: { color: PALETTE.secondary, width: 1 }
+        },
+        text: byTicket.map(r => fmt$(r.ticket_prom)),
+        textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
-        height: 480, yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
-        xaxis: { title: "Ticket Promedio ($)", gridcolor: "#2a2a3e" },
+        height: 480,
+        yaxis: { autorange: "reversed" },
+        xaxis: { title: "Ticket Promedio ($)" },
         margin: { l: 160 },
     }), plotlyConfig);
 
@@ -489,12 +745,17 @@ async function renderStaff() {
         const rows2 = d.waiter_time.filter(r => r.mesero === w);
         return {
             x: rows2.map(r => r.mes), y: rows2.map(r => r.ventas),
-            name: w, mode: "lines+markers",
-            line: { color: COLORS[i % COLORS.length] },
-            marker: { color: COLORS[i % COLORS.length] },
+            name: w,
+            mode: "lines+markers",
+            line: { color: CHART_COLORS[i % CHART_COLORS.length], width: 3, shape: "spline" },
+            marker: { color: CHART_COLORS[i % CHART_COLORS.length], size: 6 },
         };
     });
-    Plotly.react("chart-waiter-time", traces, L({ height: 400, hovermode: "x unified" }), plotlyConfig);
+    Plotly.react("chart-waiter-time", traces, L({
+        height: 400,
+        hovermode: "x unified",
+        legend: { orientation: "h", y: 1.15 },
+    }), plotlyConfig);
 
     // Monthly waiter performance with duration
     if (d.waiter_monthly && d.all_months) {
@@ -505,7 +766,6 @@ async function renderStaff() {
             opt.textContent = m;
             select.appendChild(opt);
         });
-        // Default to last month
         select.value = d.all_months[d.all_months.length - 2] || d.all_months[d.all_months.length - 1];
         renderWaiterMonthly(d, select.value);
         select.addEventListener("change", () => renderWaiterMonthly(d, select.value));
@@ -518,7 +778,7 @@ function renderWaiterMonthly(d, month) {
 
     if (!rows.length) {
         document.getElementById("waiter-monthly-table").innerHTML =
-            '<p style="color:#a0a0b0;padding:16px;">Sin datos para este mes.</p>';
+            '<p style="color:#94a3b8;padding:16px;">Sin datos para este mes.</p>';
         Plotly.purge("chart-waiter-monthly-rev");
         Plotly.purge("chart-waiter-monthly-dur");
         return;
@@ -530,24 +790,26 @@ function renderWaiterMonthly(d, month) {
             y: rows.map(r => r.waiter),
             x: rows.map(r => r.ingresos),
             type: "bar", orientation: "h", name: "Ingresos",
-            marker: { color: "#ff5023" },
+            marker: { color: PALETTE.primary + "cc" },
             text: rows.map(r => fmt$(r.ingresos)),
             textposition: "outside",
+            textfont: { color: "#94a3b8" },
         },
         {
             y: rows.map(r => r.waiter),
             x: rows.map(r => r.ventas),
             type: "bar", orientation: "h", name: "# Ventas",
-            marker: { color: "rgba(46,196,182,0.6)" },
+            marker: { color: PALETTE.secondary + "80" },
             xaxis: "x2",
             text: rows.map(r => fmtN(r.ventas)),
             textposition: "outside",
+            textfont: { color: "#94a3b8" },
         },
     ], L({
         height: Math.max(250, rows.length * 50 + 80),
-        yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
-        xaxis: { title: "Ingresos ($)", gridcolor: "#2a2a3e", side: "bottom" },
-        xaxis2: { title: "# Ventas", overlaying: "x", side: "top", gridcolor: "#2a2a3e" },
+        yaxis: { autorange: "reversed" },
+        xaxis: { title: "Ingresos ($)", side: "bottom" },
+        xaxis2: { title: "# Ventas", overlaying: "x", side: "top" },
         margin: { l: 140, t: 40 },
         legend: { orientation: "h", y: 1.15 },
         barmode: "group",
@@ -556,23 +818,27 @@ function renderWaiterMonthly(d, month) {
     // Duration bar chart
     const maxDur = Math.max(...rows.map(r => r.duracion_prom || 0));
     const durColors = rows.map(r => {
-        if (r.duracion_prom == null) return "#555";
-        if (r.duracion_prom <= 2) return "#4caf50";
-        if (r.duracion_prom <= 5) return "#2ec4b6";
-        if (r.duracion_prom <= 10) return "#ffc107";
-        return "#ee6c4d";
+        if (r.duracion_prom == null) return "#475569";
+        if (r.duracion_prom <= 2) return PALETTE.success;
+        if (r.duracion_prom <= 5) return PALETTE.secondary;
+        if (r.duracion_prom <= 10) return PALETTE.warning;
+        return PALETTE.danger;
     });
     Plotly.react("chart-waiter-monthly-dur", [{
         y: rows.map(r => r.waiter),
         x: rows.map(r => r.duracion_prom),
         type: "bar", orientation: "h",
-        marker: { color: durColors },
+        marker: {
+            color: durColors,
+            line: { color: durColors, width: 1 }
+        },
         text: rows.map(r => r.duracion_prom != null ? r.duracion_prom.toFixed(1) + " min" : "—"),
         textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
         height: Math.max(250, rows.length * 50 + 80),
-        yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
-        xaxis: { title: "Minutos promedio", gridcolor: "#2a2a3e", range: [0, maxDur * 1.3] },
+        yaxis: { autorange: "reversed" },
+        xaxis: { title: "Minutos promedio", range: [0, maxDur * 1.3] },
         margin: { l: 140 },
     }), plotlyConfig);
 
@@ -596,48 +862,85 @@ function renderWaiterMonthly(d, month) {
 async function renderTime() {
     const d = await fetchJSON("time_patterns.json");
 
-    // Revenue heatmap
+    // Revenue heatmap - premium warm colors
     Plotly.react("chart-heatmap-rev", [{
         z: d.heatmap_revenue.z,
         x: d.heatmap_revenue.hours.map(h => h + ":00"),
         y: d.heatmap_revenue.days,
-        type: "heatmap", colorscale: "YlOrRd",
-        hovertemplate: "Dia: %{y}<br>Hora: %{x}<br>Ingresos: $%{z:,.0f}<extra></extra>",
-    }], L({ height: 380 }), plotlyConfig);
+        type: "heatmap",
+        colorscale: HEATMAP_WARM,
+        hovertemplate: "<b>%{y}</b><br>Hora: %{x}<br>Ingresos: $%{z:,.0f}<extra></extra>",
+        colorbar: {
+            title: { text: "Ingresos", font: { color: "#94a3b8" } },
+            tickfont: { color: "#94a3b8" },
+            outlinecolor: "#475569"
+        }
+    }], L({
+        height: 380,
+        xaxis: { title: "Hora", side: "bottom" },
+    }), plotlyConfig);
 
-    // Hourly revenue
+    // Hourly revenue - gradient bars
+    const maxRev = Math.max(...d.hourly.map(r => r.ingresos));
+    const hourlyColors = d.hourly.map(r => {
+        const ratio = r.ingresos / maxRev;
+        return `rgba(255, 107, 61, ${0.3 + ratio * 0.7})`;
+    });
+
     Plotly.react("chart-hourly", [{
         x: d.hourly.map(r => r.hour),
         y: d.hourly.map(r => r.ingresos),
-        type: "bar", marker: { color: "#ff5023" },
+        type: "bar",
+        marker: {
+            color: hourlyColors,
+            line: { color: PALETTE.primary, width: 1 }
+        },
         text: d.hourly.map(r => fmtN(r.ventas)),
         textposition: "outside",
+        textfont: { color: "#94a3b8", size: 10 },
     }], L({
         height: 380,
-        xaxis: { title: "Hora", gridcolor: "#2a2a3e" },
-        yaxis: { title: "Ingresos ($)", gridcolor: "#2a2a3e" },
+        xaxis: { title: "Hora", dtick: 1 },
+        yaxis: { title: "Ingresos ($)" },
+        bargap: 0.2,
     }), plotlyConfig);
 
     // DoW sales
+    const dowColors = d.dow.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
     Plotly.react("chart-dow2", [{
         x: d.dow.map(r => r.dia),
         y: d.dow.map(r => r.ventas),
-        type: "bar", marker: { color: "#2ec4b6" },
+        type: "bar",
+        marker: {
+            color: dowColors,
+            line: { color: "#0f172a", width: 2 }
+        },
         text: d.dow.map(r => fmt$(r.ingresos)),
         textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
         height: 380,
-        yaxis: { title: "Cantidad de Ventas", gridcolor: "#2a2a3e" },
+        yaxis: { title: "Cantidad de Ventas" },
+        bargap: 0.35,
     }), plotlyConfig);
 
-    // Sales count heatmap
+    // Sales count heatmap - cool colors
     Plotly.react("chart-heatmap-sales", [{
         z: d.heatmap_sales.z,
         x: d.heatmap_sales.hours.map(h => h + ":00"),
         y: d.heatmap_sales.days,
-        type: "heatmap", colorscale: "Blues",
-        hovertemplate: "Dia: %{y}<br>Hora: %{x}<br>Ventas: %{z:,}<extra></extra>",
-    }], L({ height: 380 }), plotlyConfig);
+        type: "heatmap",
+        colorscale: HEATMAP_COOL,
+        hovertemplate: "<b>%{y}</b><br>Hora: %{x}<br>Ventas: %{z:,}<extra></extra>",
+        colorbar: {
+            title: { text: "Ventas", font: { color: "#94a3b8" } },
+            tickfont: { color: "#94a3b8" },
+            outlinecolor: "#475569"
+        }
+    }], L({
+        height: 380,
+        xaxis: { title: "Hora" },
+    }), plotlyConfig);
 }
 
 
@@ -647,27 +950,56 @@ async function renderTime() {
 async function renderProfit() {
     const d = await fetchJSON("profitability.json");
 
+    // Custom RdYlGn for margins
+    const marginColorscale = [
+        [0, "#ef4444"],
+        [0.3, "#f59e0b"],
+        [0.5, "#fbbf24"],
+        [0.7, "#84cc16"],
+        [1, "#22c55e"]
+    ];
+
     // Margin % by category
     Plotly.react("chart-cat-margin", [{
         y: d.category_margin.map(r => r.product_category),
         x: d.category_margin.map(r => r.margin_pct),
         type: "bar", orientation: "h",
-        marker: { color: d.category_margin.map(r => r.margin_pct), colorscale: "RdYlGn", cmin: 0, cmax: 100 },
+        marker: {
+            color: d.category_margin.map(r => r.margin_pct),
+            colorscale: marginColorscale,
+            cmin: 0, cmax: 100,
+            line: { color: "#0f172a", width: 2 }
+        },
         text: d.category_margin.map(r => fmtPct(r.margin_pct)),
         textposition: "outside",
-    }], L({ height: 380, margin: { l: 160 } }), plotlyConfig);
+        textfont: { color: "#94a3b8" },
+    }], L({
+        height: 380,
+        margin: { l: 160 },
+        xaxis: { title: "Margen %" }
+    }), plotlyConfig);
 
     // Profit $ by category
+    const profitColors = d.category_profit.map((_, i) => {
+        const ratio = 1 - (i / d.category_profit.length);
+        return `rgba(0, 212, 170, ${0.4 + ratio * 0.6})`;
+    });
+
     Plotly.react("chart-cat-profit", [{
         y: d.category_profit.map(r => r.product_category),
         x: d.category_profit.map(r => r.margin_abs),
         type: "bar", orientation: "h",
-        marker: { color: "#2ec4b6" },
+        marker: {
+            color: profitColors,
+            line: { color: PALETTE.secondary, width: 1 }
+        },
         text: d.category_profit.map(r => fmt$(r.margin_abs)),
         textposition: "outside",
+        textfont: { color: "#94a3b8" },
     }], L({
-        height: 380, margin: { l: 160 },
-        xaxis: { title: "Ganancia ($)", gridcolor: "#2a2a3e" },
+        height: 380,
+        margin: { l: 160 },
+        xaxis: { title: "Ganancia ($)" },
     }), plotlyConfig);
 
     // Margin over time (dual axis)
@@ -676,24 +1008,31 @@ async function renderProfit() {
             x: d.margin_time.map(r => r.year_month),
             y: d.margin_time.map(r => r.margin_abs),
             type: "bar", name: "Ganancia ($)",
-            marker: { color: "rgba(46,196,182,0.6)" },
+            marker: {
+                color: PALETTE.secondary + "70",
+                line: { color: PALETTE.secondary, width: 1 }
+            },
         },
         {
             x: d.margin_time.map(r => r.year_month),
             y: d.margin_time.map(r => r.margin_pct),
-            type: "scatter", mode: "lines+markers",
-            name: "Margen %", yaxis: "y2",
-            line: { color: "#ff5023" },
-            marker: { color: "#ff5023" },
+            type: "scatter",
+            mode: "lines+markers",
+            name: "Margen %",
+            yaxis: "y2",
+            line: { color: PALETTE.primary, width: 3, shape: "spline" },
+            marker: { color: PALETTE.primary, size: 8 },
         },
     ], L({
-        yaxis: { title: "Ganancia ($)", gridcolor: "#2a2a3e" },
-        yaxis2: { title: "Margen %", overlaying: "y", side: "right", gridcolor: "#2a2a3e" },
-        height: 400, hovermode: "x unified",
+        yaxis: { title: "Ganancia ($)" },
+        yaxis2: { title: "Margen %", overlaying: "y", side: "right" },
+        height: 400,
+        hovermode: "x unified",
         legend: { orientation: "h", y: 1.12 },
+        bargap: 0.3,
     }), plotlyConfig);
 
-    // Top margin table
+    // Top/bottom margin tables
     const mHeaders = ["Producto", "Ingresos", "Costo", "Ganancia", "Margen %", "Cantidad"];
     const mAligns = ["l","r","r","r","r","r"];
     document.getElementById("top-margin-table").innerHTML = buildTable(mHeaders,
@@ -705,23 +1044,30 @@ async function renderProfit() {
         mAligns
     );
 
-    // Scatter: Revenue vs Margin %
+    // Scatter: Revenue vs Margin % - premium bubbles
     Plotly.react("chart-scatter", [{
         x: d.scatter.map(r => r.revenue),
         y: d.scatter.map(r => r.margin_pct),
         text: d.scatter.map(r => r.product_name),
         mode: "markers",
         marker: {
-            size: d.scatter.map(r => Math.min(Math.max(r.qty / 5, 5), 40)),
+            size: d.scatter.map(r => Math.min(Math.max(r.qty / 4, 8), 50)),
             color: d.scatter.map(r => r.margin_pct),
-            colorscale: "RdYlGn", cmin: 0, cmax: 100,
-            colorbar: { title: "Margen %" },
+            colorscale: marginColorscale,
+            cmin: 0, cmax: 100,
+            colorbar: {
+                title: { text: "Margen %", font: { color: "#94a3b8" } },
+                tickfont: { color: "#94a3b8" },
+                outlinecolor: "#475569"
+            },
+            line: { color: "#0f172a", width: 1 },
+            opacity: 0.85,
         },
-        hovertemplate: "%{text}<br>Ingresos: $%{x:,.0f}<br>Margen: %{y:.1f}%<extra></extra>",
+        hovertemplate: "<b>%{text}</b><br>Ingresos: $%{x:,.0f}<br>Margen: %{y:.1f}%<extra></extra>",
     }], L({
         height: 450,
-        xaxis: { title: "Ingresos ($)", gridcolor: "#2a2a3e" },
-        yaxis: { title: "Margen %", gridcolor: "#2a2a3e" },
+        xaxis: { title: "Ingresos ($)" },
+        yaxis: { title: "Margen %" },
     }), plotlyConfig);
 }
 
@@ -743,7 +1089,6 @@ async function renderDetail() {
                 <li>Costo: <strong>${fmt$(s.total_item_cost)}</strong></li>
                 <li>Ganancia bruta: <strong>${fmt$(s.gross_margin_abs)}</strong></li>
                 <li>Descuentos: <strong>${fmt$(s.total_discounts)}</strong></li>
-                <li>Propinas: <strong>${fmt$(s.total_tips)}</strong></li>
             </ul>
         </div>
         <div class="detail-card">

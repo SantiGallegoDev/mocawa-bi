@@ -5,29 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mocawa Cafe - Analisis BI &amp; Recomendaciones</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg: #0e1117;
-            --surface: #1a1a2e;
-            --surface2: #16213e;
+            --bg: #0a0c10;
+            --bg-gradient: linear-gradient(135deg, #0a0c10 0%, #0e1218 100%);
+            --surface: #13161d;
+            --surface2: #1a1f2a;
             --accent: #ff5023;
             --accent2: #2ec4b6;
             --green: #4caf50;
             --yellow: #ffc107;
             --red: #ee6c4d;
-            --text: #fafafa;
-            --text-muted: #a0a0b0;
-            --border: #2a2a3e;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #262d3d;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+            --radius: 12px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         body {
-            background: var(--bg);
+            background: var(--bg-gradient);
             color: var(--text);
-            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
             line-height: 1.7;
-            padding: 0 20px 60px;
+            padding: 0 24px 60px;
             max-width: 1200px;
             margin: 0 auto;
+            min-height: 100vh;
         }
         a { color: var(--accent2); text-decoration: none; }
         a:hover { text-decoration: underline; }
@@ -35,95 +45,179 @@
         /* Header */
         .header {
             text-align: center;
-            padding: 30px 0 10px;
-            border-bottom: 2px solid var(--accent);
-            margin-bottom: 30px;
+            padding: 36px 0 20px;
+            margin-bottom: 36px;
+            position: relative;
         }
-        .header h1 { font-size: 2rem; font-weight: 700; }
-        .header .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 6px; }
-        .back-link { display: inline-block; margin-top: 10px; font-size: 0.9rem; }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            border-radius: 2px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text) 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 8px; }
+        .back-link {
+            display: inline-block;
+            margin-top: 14px;
+            font-size: 0.9rem;
+            color: var(--accent2);
+            text-decoration: none;
+            padding: 8px 20px;
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        .back-link:hover {
+            background: var(--surface2);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
 
         /* TOC */
         .toc {
-            background: var(--surface);
-            border-radius: 12px;
-            padding: 20px 28px;
-            margin-bottom: 36px;
+            background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+            border-radius: var(--radius);
+            padding: 24px 32px;
+            margin-bottom: 40px;
+            border-left: 4px solid var(--accent);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
             border-left: 4px solid var(--accent);
         }
-        .toc h2 { font-size: 1.1rem; margin-bottom: 10px; color: var(--accent); }
-        .toc ol { padding-left: 20px; }
-        .toc li { margin: 5px 0; }
-        .toc a { color: var(--accent2); font-size: 0.95rem; }
+        .toc h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--accent); font-weight: 600; }
+        .toc ol { padding-left: 24px; }
+        .toc li { margin: 6px 0; }
+        .toc a {
+            color: var(--accent2);
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .toc a:hover { color: var(--accent); }
 
         /* Section */
         .section {
-            margin-bottom: 40px;
+            margin-bottom: 48px;
         }
         .section h2 {
             font-size: 1.5rem;
             color: var(--accent);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-            margin-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: var(--accent);
         }
         .section h3 {
             font-size: 1.15rem;
             color: var(--accent2);
-            margin: 20px 0 10px;
+            margin: 24px 0 12px;
+            font-weight: 600;
         }
         .section p, .section li {
             color: var(--text-muted);
             font-size: 0.95rem;
         }
         .section ul, .section ol {
-            padding-left: 22px;
-            margin: 8px 0;
+            padding-left: 24px;
+            margin: 10px 0;
         }
-        .section li { margin: 4px 0; }
+        .section li { margin: 5px 0; }
         .section strong { color: var(--text); }
 
         /* Highlight cards */
         .highlight-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            margin: 16px 0;
+            gap: 18px;
+            margin: 20px 0;
         }
         .highlight-card {
-            background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
-            border-radius: 12px;
-            padding: 18px 22px;
+            background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            border: 1px solid var(--border);
             border-left: 4px solid var(--accent);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .highlight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+        }
+        .highlight-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
         }
         .highlight-card.green { border-left-color: var(--green); }
         .highlight-card.yellow { border-left-color: var(--yellow); }
         .highlight-card.red { border-left-color: var(--red); }
         .highlight-card .card-title {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            font-weight: 500;
         }
         .highlight-card .card-value {
-            font-size: 1.6rem;
+            font-size: 1.7rem;
             font-weight: 700;
+            background: linear-gradient(135deg, var(--text) 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .highlight-card .card-desc {
             font-size: 0.85rem;
             color: var(--text-muted);
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
         /* Recommendation cards */
         .rec-card {
-            background: var(--surface);
-            border-radius: 12px;
-            padding: 20px 24px;
-            margin: 14px 0;
+            background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            margin: 18px 0;
+            border: 1px solid var(--border);
             border-left: 5px solid var(--accent);
             position: relative;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+        .rec-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateX(4px);
         }
         .rec-card.high { border-left-color: var(--red); }
         .rec-card.medium { border-left-color: var(--yellow); }
@@ -132,7 +226,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
         .rec-card .rec-title {
             font-size: 1.1rem;
@@ -141,31 +235,36 @@
         }
         .rec-card .rec-badge {
             font-size: 0.7rem;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 12px;
             font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
-        .rec-card.high .rec-badge { background: var(--red); color: #fff; }
-        .rec-card.medium .rec-badge { background: var(--yellow); color: #1a1a2e; }
-        .rec-card.low .rec-badge { background: var(--green); color: #fff; }
+        .rec-card.high .rec-badge { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(238, 108, 77, 0.4); }
+        .rec-card.medium .rec-badge { background: var(--yellow); color: #1a1a2e; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4); }
+        .rec-card.low .rec-badge { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4); }
         .rec-card p, .rec-card li { color: var(--text-muted); font-size: 0.9rem; }
-        .rec-card ul { padding-left: 18px; margin: 8px 0; }
+        .rec-card ul { padding-left: 20px; margin: 10px 0; }
         .rec-card .impact {
-            margin-top: 10px;
-            padding: 8px 14px;
-            background: rgba(255, 80, 35, 0.08);
+            margin-top: 14px;
+            padding: 12px 18px;
+            background: rgba(255, 80, 35, 0.1);
             border-radius: 8px;
             font-size: 0.85rem;
             color: var(--accent);
+            font-weight: 500;
+            border: 1px solid rgba(255, 80, 35, 0.2);
         }
 
         /* Data tables */
         .data-table-wrap {
             overflow-x: auto;
-            border-radius: 10px;
+            border-radius: var(--radius);
             border: 1px solid var(--border);
-            margin: 14px 0;
+            margin: 18px 0;
+            box-shadow: var(--shadow-md);
+            background: var(--surface);
         }
         table {
             width: 100%;
@@ -173,21 +272,26 @@
             font-size: 0.85rem;
         }
         th {
-            background: var(--surface2);
+            background: linear-gradient(180deg, var(--surface2) 0%, #1a2030 100%);
             color: var(--accent);
-            padding: 10px 14px;
+            padding: 14px 16px;
             text-align: left;
             font-weight: 600;
             border-bottom: 2px solid var(--accent);
             white-space: nowrap;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
         }
         td {
-            padding: 8px 14px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--border);
             white-space: nowrap;
         }
-        td.num { text-align: right; font-variant-numeric: tabular-nums; }
-        tr:nth-child(even) { background: rgba(26,26,46,0.5); }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+        tr { transition: var(--transition); }
+        tr:nth-child(even) { background: rgba(26, 31, 42, 0.5); }
+        tr:hover { background: rgba(255, 80, 35, 0.08); }
         .bad { color: var(--red); font-weight: 600; }
         .good { color: var(--green); font-weight: 600; }
         .warn { color: var(--yellow); font-weight: 600; }
@@ -208,11 +312,23 @@
 
         /* Insight box */
         .insight-box {
-            background: rgba(46, 196, 182, 0.08);
-            border: 1px solid rgba(46, 196, 182, 0.3);
-            border-radius: 10px;
-            padding: 16px 20px;
-            margin: 14px 0;
+            background: linear-gradient(145deg, rgba(46, 196, 182, 0.08) 0%, rgba(46, 196, 182, 0.04) 100%);
+            border: 1px solid rgba(46, 196, 182, 0.25);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin: 20px 0;
+            box-shadow: var(--shadow-sm), 0 0 20px rgba(46, 196, 182, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .insight-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent2);
         }
         .insight-box .insight-label {
             font-size: 0.75rem;
@@ -220,7 +336,7 @@
             letter-spacing: 0.5px;
             color: var(--accent2);
             font-weight: 700;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         .insight-box p { font-size: 0.9rem; color: var(--text-muted); }
 
@@ -229,10 +345,27 @@
             text-align: center;
             color: var(--text-muted);
             font-size: 0.8rem;
-            padding: 20px 0;
+            padding: 24px 0;
             border-top: 1px solid var(--border);
-            margin-top: 40px;
+            margin-top: 48px;
+            position: relative;
         }
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+        .footer a {
+            color: var(--accent2);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .footer a:hover { color: var(--accent); }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -260,9 +393,8 @@
         <li><a href="#products">Analisis de Productos y Categorias</a></li>
         <li><a href="#margins">Analisis de Rentabilidad y Margenes</a></li>
         <li><a href="#payments">Metodos de Pago y Tendencias</a></li>
-        <li><a href="#staff">Rendimiento del Equipo</a></li>
         <li><a href="#time">Patrones de Horario y Oportunidades</a></li>
-        <li><a href="#recommendations">Plan de Accion: 12 Recomendaciones</a></li>
+        <li><a href="#recommendations">Plan de Accion: 10 Recomendaciones</a></li>
         <li><a href="#roadmap">Hoja de Ruta (Roadmap)</a></li>
     </ol>
 </nav>
@@ -296,7 +428,7 @@
 
     <p>Mocawa Cafe muestra un negocio <strong>saludable y en crecimiento acelerado</strong>, con margenes brutos de 76.1% — superiores al promedio de la industria QSR (55-65%). El 2025 marco un punto de inflexion con crecimiento sostenido del 30-85% interanual en la mayoria de meses.</p>
 
-    <p>Sin embargo, existen <strong>oportunidades claras de optimizacion</strong>: la categoria de sandwiches opera con margenes peligrosamente bajos (48-51%), la dependencia del efectivo genera ineficiencias operativas, y la concentracion de ventas en un solo miembro del staff representa un riesgo para el negocio.</p>
+    <p>Sin embargo, existen <strong>oportunidades claras de optimizacion</strong>: la categoria de sandwiches opera con margenes peligrosamente bajos (48-51%), y la dependencia del efectivo genera ineficiencias operativas que deben corregirse.</p>
 
     <div class="insight-box">
         <div class="insight-label">Hallazgo Principal</div>
@@ -320,7 +452,6 @@
                 <tr><td>Ingreso Diario Prom.</td><td class="num">$1,511,605</td><td class="good">Solido</td><td>Creciendo 40% YoY</td></tr>
                 <tr><td>Tasa de Cancelacion</td><td class="num">0.05%</td><td class="good">Excelente</td><td>&lt;2% es bueno</td></tr>
                 <tr><td>Duracion Promedio</td><td class="num">2 min</td><td class="good">Rapido</td><td>Modelo takeaway eficiente</td></tr>
-                <tr><td>Propinas Totales</td><td class="num">$20,000</td><td class="bad">Muy Bajo</td><td>Falta cultura de propina o sistema</td></tr>
                 <tr><td>Descuentos</td><td class="num">$161,175</td><td class="good">Controlado</td><td>0.008% de ingresos — minimo</td></tr>
             </tbody>
         </table>
@@ -526,48 +657,10 @@
     </div>
 </section>
 
-<!-- 7. STAFF -->
-<section class="section" id="staff">
-    <h2>7. Rendimiento del Equipo</h2>
-
-    <div class="data-table-wrap">
-        <table>
-            <thead>
-                <tr><th>Mesero/a</th><th>Ingresos</th><th>% Total</th><th>Ventas</th><th>Ticket Prom.</th><th>Evaluacion</th></tr>
-            </thead>
-            <tbody>
-                <tr><td>Manuel</td><td class="num">$824.7M</td><td class="num bad">42.5%</td><td class="num">83,694</td><td class="num">$9,853</td><td class="warn">Alta concentracion</td></tr>
-                <tr><td>Cristian David</td><td class="num">$404.1M</td><td class="num">20.8%</td><td class="num">38,076</td><td class="num good">$10,614</td><td class="good">Solido #2</td></tr>
-                <tr><td>Daniela Orrego</td><td class="num">$335.8M</td><td class="num">17.3%</td><td class="num">40,734</td><td class="num bad">$8,243</td><td class="warn">Ticket bajo</td></tr>
-                <tr><td>Cristian Monroy</td><td class="num">$189.6M</td><td class="num">9.8%</td><td class="num">16,724</td><td class="num good">$11,339</td><td class="good">Mejor ticket prom.</td></tr>
-                <tr><td>Eduardo</td><td class="num">$74.3M</td><td class="num">3.8%</td><td class="num">6,274</td><td class="num good">$11,850</td><td class="good">Alto valor por venta</td></tr>
-                <tr><td>Alejandro</td><td class="num">$43.8M</td><td class="num">2.3%</td><td class="num">4,032</td><td class="num good">$10,860</td><td>En desarrollo</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="highlight-grid">
-        <div class="highlight-card red">
-            <div class="card-title">Riesgo de Concentracion</div>
-            <div class="card-value">42.5%</div>
-            <div class="card-desc">Manuel maneja casi la mitad del ingreso. Si faltara, el impacto seria critico.</div>
-        </div>
-        <div class="highlight-card yellow">
-            <div class="card-title">Oportunidad de Upselling</div>
-            <div class="card-value">$8,243</div>
-            <div class="card-desc">Daniela tiene el mayor volumen pero el menor ticket. Capacitacion en upselling podria agregar $1,000+/ticket.</div>
-        </div>
-        <div class="highlight-card green">
-            <div class="card-title">Mejor Practica</div>
-            <div class="card-value">$11,850</div>
-            <div class="card-desc">Eduardo logra el ticket mas alto. Sus tecnicas deben replicarse al equipo.</div>
-        </div>
-    </div>
-</section>
 
 <!-- 8. TIME PATTERNS -->
 <section class="section" id="time">
-    <h2>8. Patrones de Horario y Oportunidades</h2>
+    <h2>7. Patrones de Horario y Oportunidades</h2>
 
     <h3>8.1 Distribucion Horaria del Ingreso</h3>
     <div class="data-table-wrap">
@@ -598,7 +691,7 @@
 
 <!-- 9. RECOMMENDATIONS -->
 <section class="section" id="recommendations">
-    <h2>9. Plan de Accion: 12 Recomendaciones</h2>
+    <h2>8. Plan de Accion: 10 Recomendaciones</h2>
 
     <h3>Prioridad Alta — Implementar en 1-4 semanas</h3>
 
@@ -630,39 +723,12 @@
         <div class="impact">Impacto estimado: Si el ticket sube $1,500 → +$293M anuales en ingresos</div>
     </div>
 
-    <div class="rec-card high">
-        <div class="rec-header">
-            <span class="rec-title">3. Reducir Dependencia de Manuel</span>
-            <span class="rec-badge">Urgente</span>
-        </div>
-        <p>Un solo colaborador maneja el 42.5% del ingreso. Esto es un riesgo operativo critico (vacaciones, enfermedad, renuncia).</p>
-        <ul>
-            <li><strong>Accion inmediata:</strong> Documentar los procesos y tecnicas de Manuel</li>
-            <li><strong>Cross-training:</strong> Asegurar que al menos 2 personas mas puedan cubrir su rol completamente</li>
-            <li><strong>Plan de incentivos:</strong> Programa de bonus para staff que supere ticket promedio de $10,500</li>
-        </ul>
-        <div class="impact">Impacto: Mitigacion de riesgo operativo critico</div>
-    </div>
-
-    <div class="rec-card high">
-        <div class="rec-header">
-            <span class="rec-title">4. Capacitacion en Upselling para Daniela</span>
-            <span class="rec-badge">Urgente</span>
-        </div>
-        <p>Daniela tiene el <strong>mayor volumen de transacciones</strong> (40,734) pero el <strong>ticket mas bajo</strong> ($8,243) — $1,654 menos que el promedio. Tiene la habilidad de atender rapido; le falta la venta sugestiva.</p>
-        <ul>
-            <li><strong>Coaching:</strong> Sesiones con Eduardo (ticket $11,850) para aprender sus tecnicas</li>
-            <li><strong>Script sugerido:</strong> "¿Le agrego un croissant de almendras?" / "¿Lo quiere de 9oz?"</li>
-            <li><strong>Meta:</strong> Subir su ticket de $8,243 a $9,500 en 8 semanas</li>
-        </ul>
-        <div class="impact">Impacto estimado: Si sube a $9,500 → +$51M adicionales en el periodo</div>
-    </div>
 
     <h3>Prioridad Media — Implementar en 1-3 meses</h3>
 
     <div class="rec-card medium">
         <div class="rec-header">
-            <span class="rec-title">5. Acelerar Adopcion de Pagos Digitales</span>
+            <span class="rec-title">3. Acelerar Adopcion de Pagos Digitales</span>
             <span class="rec-badge">Medio</span>
         </div>
         <p>Los clientes con tarjeta debito gastan 50% mas ($14,059 vs $9,375 en efectivo). Mayor adopcion digital = mayor ticket promedio automaticamente.</p>
@@ -676,7 +742,7 @@
 
     <div class="rec-card medium">
         <div class="rec-header">
-            <span class="rec-title">6. Promocion "Lunes de Latte"</span>
+            <span class="rec-title">4. Promocion "Lunes de Latte"</span>
             <span class="rec-badge">Medio</span>
         </div>
         <p>Los Lunes generan 14.9% del ingreso semanal vs 19-20% de Martes a Viernes — un deficit de ~$100M anuales en ingresos potenciales.</p>
@@ -690,7 +756,7 @@
 
     <div class="rec-card medium">
         <div class="rec-header">
-            <span class="rec-title">7. "Happy Hour" de 5 a 6 PM</span>
+            <span class="rec-title">5. "Happy Hour" de 5 a 6 PM</span>
             <span class="rec-badge">Medio</span>
         </div>
         <p>El valle de 17:00-18:00 es una oportunidad para captar trafico con promociones enfocadas en bebidas frias y snacks.</p>
@@ -704,7 +770,7 @@
 
     <div class="rec-card medium">
         <div class="rec-header">
-            <span class="rec-title">8. Promover Adiciones (Margen 90.6%)</span>
+            <span class="rec-title">6. Promover Adiciones (Margen 90.6%)</span>
             <span class="rec-badge">Medio</span>
         </div>
         <p>Las adiciones (vainilla, whiskey, baileys, michelada) tienen 90.6% de margen pero solo generan $3.3M. Esto es dinero casi gratis que se esta dejando en la mesa.</p>
@@ -720,7 +786,7 @@
 
     <div class="rec-card low">
         <div class="rec-header">
-            <span class="rec-title">9. Expandir Bebidas Frias</span>
+            <span class="rec-title">7. Expandir Bebidas Frias</span>
             <span class="rec-badge">Estrategico</span>
         </div>
         <p>Las bebidas frias representan solo el 9.8% del ingreso. El Granizado Cafe ($25M, 84.9% margen) demuestra que hay demanda por opciones frias premium.</p>
@@ -734,7 +800,7 @@
 
     <div class="rec-card low">
         <div class="rec-header">
-            <span class="rec-title">10. Evaluar Apertura Dominical</span>
+            <span class="rec-title">8. Evaluar Apertura Dominical</span>
             <span class="rec-badge">Estrategico</span>
         </div>
         <p>El Domingo no opera (solo 1 venta registrada). Dado el crecimiento del negocio y que el Sabado genera $179.9M, un Domingo con horario reducido podria ser rentable.</p>
@@ -748,10 +814,10 @@
 
     <div class="rec-card low">
         <div class="rec-header">
-            <span class="rec-title">11. Implementar Sistema de Fidelizacion</span>
+            <span class="rec-title">9. Implementar Sistema de Fidelizacion</span>
             <span class="rec-badge">Estrategico</span>
         </div>
-        <p>Con 195,962 transacciones y casi cero descuentos/propinas registradas, no hay evidencia de un programa de lealtad activo.</p>
+        <p>Con 195,962 transacciones y minimos descuentos registrados, no hay evidencia de un programa de lealtad activo.</p>
         <ul>
             <li>Tarjeta o app: "10 cafes = 1 gratis" (costo real: ~$1,200 por recompensa, retorno: 10 visitas de ~$10,000)</li>
             <li>Beneficios escalonados: Bronce, Plata, Oro</li>
@@ -762,7 +828,7 @@
 
     <div class="rec-card low">
         <div class="rec-header">
-            <span class="rec-title">12. Mejorar Captura de Datos de Gastos</span>
+            <span class="rec-title">10. Mejorar Captura de Datos de Gastos</span>
             <span class="rec-badge">Estrategico</span>
         </div>
         <p>Los gastos registrados ($21.7M) representan solo el 1.1% de los ingresos — claramente incompletos. Sin datos reales de gastos operativos (nomina, arriendo, servicios, insumos) es imposible calcular la rentabilidad neta real.</p>
@@ -777,7 +843,7 @@
 
 <!-- 10. ROADMAP -->
 <section class="section" id="roadmap">
-    <h2>10. Hoja de Ruta (Roadmap)</h2>
+    <h2>9. Hoja de Ruta (Roadmap)</h2>
 
     <div class="data-table-wrap">
         <table>
@@ -791,8 +857,7 @@
                     <td>
                         Ajustar precios de sandwiches (+10%)<br>
                         Iniciar combos bebida+panaderia<br>
-                        Capacitacion upselling a Daniela<br>
-                        Documentar procesos de Manuel
+                        Entrenar staff en upselling y adiciones
                     </td>
                     <td class="good">+$15-20M anuales</td>
                 </tr>
