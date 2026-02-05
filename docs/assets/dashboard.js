@@ -495,6 +495,98 @@ async function renderStaff() {
         };
     });
     Plotly.react("chart-waiter-time", traces, L({ height: 400, hovermode: "x unified" }), plotlyConfig);
+
+    // Monthly waiter performance with duration
+    if (d.waiter_monthly && d.all_months) {
+        const select = document.getElementById("month-select");
+        d.all_months.forEach(m => {
+            const opt = document.createElement("option");
+            opt.value = m;
+            opt.textContent = m;
+            select.appendChild(opt);
+        });
+        // Default to last month
+        select.value = d.all_months[d.all_months.length - 2] || d.all_months[d.all_months.length - 1];
+        renderWaiterMonthly(d, select.value);
+        select.addEventListener("change", () => renderWaiterMonthly(d, select.value));
+    }
+}
+
+function renderWaiterMonthly(d, month) {
+    const rows = d.waiter_monthly.filter(r => r.year_month === month)
+        .sort((a, b) => b.ingresos - a.ingresos);
+
+    if (!rows.length) {
+        document.getElementById("waiter-monthly-table").innerHTML =
+            '<p style="color:#a0a0b0;padding:16px;">Sin datos para este mes.</p>';
+        Plotly.purge("chart-waiter-monthly-rev");
+        Plotly.purge("chart-waiter-monthly-dur");
+        return;
+    }
+
+    // Revenue + sales bar chart
+    Plotly.react("chart-waiter-monthly-rev", [
+        {
+            y: rows.map(r => r.waiter),
+            x: rows.map(r => r.ingresos),
+            type: "bar", orientation: "h", name: "Ingresos",
+            marker: { color: "#ff5023" },
+            text: rows.map(r => fmt$(r.ingresos)),
+            textposition: "outside",
+        },
+        {
+            y: rows.map(r => r.waiter),
+            x: rows.map(r => r.ventas),
+            type: "bar", orientation: "h", name: "# Ventas",
+            marker: { color: "rgba(46,196,182,0.6)" },
+            xaxis: "x2",
+            text: rows.map(r => fmtN(r.ventas)),
+            textposition: "outside",
+        },
+    ], L({
+        height: Math.max(250, rows.length * 50 + 80),
+        yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
+        xaxis: { title: "Ingresos ($)", gridcolor: "#2a2a3e", side: "bottom" },
+        xaxis2: { title: "# Ventas", overlaying: "x", side: "top", gridcolor: "#2a2a3e" },
+        margin: { l: 140, t: 40 },
+        legend: { orientation: "h", y: 1.15 },
+        barmode: "group",
+    }), plotlyConfig);
+
+    // Duration bar chart
+    const maxDur = Math.max(...rows.map(r => r.duracion_prom || 0));
+    const durColors = rows.map(r => {
+        if (r.duracion_prom == null) return "#555";
+        if (r.duracion_prom <= 2) return "#4caf50";
+        if (r.duracion_prom <= 5) return "#2ec4b6";
+        if (r.duracion_prom <= 10) return "#ffc107";
+        return "#ee6c4d";
+    });
+    Plotly.react("chart-waiter-monthly-dur", [{
+        y: rows.map(r => r.waiter),
+        x: rows.map(r => r.duracion_prom),
+        type: "bar", orientation: "h",
+        marker: { color: durColors },
+        text: rows.map(r => r.duracion_prom != null ? r.duracion_prom.toFixed(1) + " min" : "—"),
+        textposition: "outside",
+    }], L({
+        height: Math.max(250, rows.length * 50 + 80),
+        yaxis: { autorange: "reversed", gridcolor: "#2a2a3e" },
+        xaxis: { title: "Minutos promedio", gridcolor: "#2a2a3e", range: [0, maxDur * 1.3] },
+        margin: { l: 140 },
+    }), plotlyConfig);
+
+    // Monthly table
+    const headers = ["Mesero/a", "Ventas", "Ingresos", "Ticket Prom.", "Duracion Prom."];
+    const aligns = ["l", "r", "r", "r", "r"];
+    const tableRows = rows.map(r => [
+        r.waiter,
+        fmtN(r.ventas),
+        fmt$(r.ingresos),
+        fmt$(r.ticket_prom),
+        r.duracion_prom != null ? r.duracion_prom.toFixed(1) + " min" : "—",
+    ]);
+    document.getElementById("waiter-monthly-table").innerHTML = buildTable(headers, tableRows, aligns);
 }
 
 

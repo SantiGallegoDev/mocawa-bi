@@ -397,10 +397,29 @@ waiter_time.columns = ["mes", "mesero", "ventas"]
 top_waiters = waiter_stats.head(8)["waiter"].tolist()
 waiter_time_top = waiter_time[waiter_time["mesero"].isin(top_waiters)]
 
+# Monthly waiter performance with duration
+valid_sales = unique_sales[(unique_sales["duration_min"] > 0) & (unique_sales["duration_min"] < 480)].copy()
+waiter_monthly = valid_sales.groupby(["year_month", "waiter"]).agg(
+    ventas=("sale_id", "nunique"),
+    ingresos=("sale_total", "sum"),
+    ticket_prom=("sale_total", "mean"),
+    duracion_prom=("duration_min", "mean"),
+).reset_index()
+waiter_monthly["duracion_prom"] = waiter_monthly["duracion_prom"].round(1)
+waiter_monthly["ticket_prom"] = waiter_monthly["ticket_prom"].round(0)
+# Only keep waiters with meaningful activity
+waiter_monthly = waiter_monthly[waiter_monthly["ventas"] >= 5]
+waiter_monthly = waiter_monthly.sort_values(["year_month", "ingresos"], ascending=[True, False])
+
+# Get all months for the selector
+all_months = sorted(waiter_monthly["year_month"].unique().tolist())
+
 write_json("staff.json", {
     "waiter_stats": waiter_stats.to_dict("records"),
     "waiter_time": waiter_time_top.to_dict("records"),
     "top_waiters": top_waiters,
+    "waiter_monthly": waiter_monthly.to_dict("records"),
+    "all_months": all_months,
 })
 
 
