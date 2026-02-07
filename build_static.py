@@ -96,8 +96,8 @@ df["product_name"] = df["product_name"].fillna("Sin Producto")
 
 print(f"  Total rows: {len(df):,}")
 
-# ─── Filter to CLOSED ──────────────────────────────────────────────────────
-fdf = df[df["sale_state"] == "CLOSED"].copy()
+# ─── Filter to CLOSED + 2025 only ─────────────────────────────────────────
+fdf = df[(df["sale_state"] == "CLOSED") & (df["year"] == 2025)].copy()
 unique_sales = fdf.drop_duplicates(subset="sale_id")
 
 min_date = fdf["created_at"].min().date()
