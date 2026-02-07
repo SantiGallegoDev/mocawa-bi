@@ -100,9 +100,10 @@ print(f"  Total rows: {len(df):,}")
 fdf = df[(df["sale_state"] == "CLOSED") & (df["year"] == 2025)].copy()
 unique_sales = fdf.drop_duplicates(subset="sale_id")
 
-min_date = fdf["created_at"].min().date()
-max_date = fdf["created_at"].max().date()
-days_in_range = max((max_date - min_date).days, 1)
+from datetime import date
+min_date = date(2025, 1, 1)
+max_date = date(2025, 12, 31)
+days_in_range = (max_date - min_date).days + 1  # 365
 
 print(f"  CLOSED rows: {len(fdf):,}")
 print(f"  Unique sales: {len(unique_sales):,}")
